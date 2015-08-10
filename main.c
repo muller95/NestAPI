@@ -219,7 +219,7 @@ int main(int argc, char **argv)
 		
 	nindivs = 1;	
 	printf("\n\n");
-	for (i = 0; i < 25; i++) {
+	for (i = 0; i < 10; i++) {
 		int nnew = 0, equal = 0, oldn;
 		
 		printf("nindivs=%d\n", nindivs);
@@ -235,15 +235,18 @@ int main(int argc, char **argv)
 
 		oldn = nindivs;
 		for (j = 0; j < oldn - 1; j++) {
-			struct Individ childs[2];
-			if (indivs[j].gensize == indivs[j + 1].gensize && indivs[j].height != INFINITY && indivs[j + 1].height != INFINITY)
-				crossover(&indivs[j], &indivs[j + 1], childs, setsize);
-			else
+			struct Individ heirs[2];
+			if (indivs[j].gensize == indivs[j + 1].gensize && indivs[j].height != INFINITY && indivs[j + 1].height != INFINITY) {
+				crossover(&indivs[j], &indivs[j + 1], &heirs[0], setsize);
+				crossover(&indivs[j + 1], &indivs[j], &heirs[1], setsize);
+			}
+			else {
 				break;
+			}
 
 			for (k = 0; k < 2; k++) {
 				for (m = 0; m < nindivs; m++) {
-					equal = gensequal(&childs[k], &indivs[m]) || gensequal2(&childs[k], &indivs[m], figset);
+					equal = gensequal(&heirs[k], &indivs[m]) || gensequal2(&heirs[k], &indivs[m], figset);
 					if (equal)
 						break;
 				}
@@ -251,8 +254,8 @@ int main(int argc, char **argv)
 
 				if (!equal) {
 					nnew++;
-					rotnest(figset, setsize, &childs[k], width, height, 45.0);
-					indivs[nindivs] = childs[k];
+					rotnest(figset, setsize, &heirs[k], width, height, 45.0);
+					indivs[nindivs] = heirs[k];
 					nindivs++;
 
 					if (nindivs == maxindivs) {
@@ -260,7 +263,7 @@ int main(int argc, char **argv)
 						indivs = (struct Individ*)xrealloc(indivs, sizeof(struct Individ) * maxindivs);
 					}
 				} else {
-					destrindiv(&childs[k]);
+					destrindiv(&heirs[k]);
 				}
 			}
 		}

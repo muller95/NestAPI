@@ -17,17 +17,12 @@ int gensequal(struct Individ *indiv1, struct Individ *indiv2);
 int gensequal2(struct Individ *indiv1, struct Individ *indiv2, struct Figure *figset);
 void crossover(struct Individ *par1, struct Individ *par2, struct Individ childs[2], int setsize);
 
-void crossover(struct Individ *par1, struct Individ *par2, struct Individ childs[2], int setsize)
+void crossover(struct Individ *par1, struct Individ *par2, struct Individ *child, int setsize)
 {
 	int i, j;
 	int g1, g2;
 
 	srand(time(NULL));
-//	g1 = rand() % (par1->gensize - 1);
-//	g2 = g1 + 1;
-   // g1 = par1->gensize / 2;
-   // g2 = g1 + 1;
-
 
 	g1 = rand() % (par1->gensize);
 	g2 = rand() % (par2->gensize);
@@ -36,11 +31,11 @@ void crossover(struct Individ *par1, struct Individ *par2, struct Individ childs
 		g2 = rand() % (par1->gensize);
 
 	
-	childs[0].genom = (int*)xmalloc(sizeof(int) * setsize);
-	childs[0].gensize = par1->gensize;
+	child->genom = (int*)xmalloc(sizeof(int) * setsize);
+	child->gensize = par1->gensize;
 	
-	childs[0].genom[g1] = par1->genom[g1];
-	childs[0].genom[g2] = par1->genom[g2];
+	child->genom[g1] = par1->genom[g1];
+	child->genom[g2] = par1->genom[g2];
 
 	for (i = 0, j = 0; i < par2->gensize && j < par2->gensize; i++, j++) {
 		if (j == g1 || j == g2) {
@@ -48,67 +43,13 @@ void crossover(struct Individ *par1, struct Individ *par2, struct Individ childs
 			continue;
 		}
 
-		if (par2->genom[i] == childs[0].genom[g1] || par2->genom[i] == childs[0].genom[g2]) {
+		if (par2->genom[i] == child->genom[g1] || par2->genom[i] == child->genom[g2]) {
 			j--;
 			continue;
 		}
 
-		childs[0].genom[j] = par2->genom[i];
-	}
-
-/*	childs[0].genom[g1] = par1->genom[g1];
-	childs[0].genom[g2] = par1->genom[g2];
-    
-	count = 0;
-	for (i = 0; i < par2->gensize; i++) {
-		if (count == g1 || count == g2) {
-			count++;
-			i--;
-			continue;
-		}
-			
-		if (par2->genom[i] == par1->genom[g1] || par2->genom[i] == par1->genom[g2]) 
-			continue;
-				
-		childs[0].genom[count] = par2->genom[i];
-		count++;
-	}*/
-	
-	childs[1].genom = (int*)xmalloc(sizeof(int) * setsize);
-	childs[1].gensize = par2->gensize;
-
-	childs[1].genom[g1] = par2->genom[g1];
-	childs[1].genom[g2] = par2->genom[g2]; 
-
-	for (i = 0, j = 0; i < par1->gensize && j < par1->gensize; i++, j++) {
-		if (j == g1 || j == g2) {
-			i--;
-			continue;
-		}
-
-		if (par1->genom[i] == childs[1].genom[g1] || par1->genom[i] == childs[1].genom[g2]) {
-			j--;
-			continue;
-		}
-
-		childs[1].genom[j] = par1->genom[i];
-	}
-
-    
-/*	count = 0;
-	for (i = 0; i < par2->gensize; i++) {
-		if (count == g1 || count == g2) {
-			count++;
-			i--;
-			continue;
-		}
-
-		if (par1->genom[i] == par2->genom[g1] || par1->genom[i] == par2->genom[g2])
-			continue;
-
-		childs[1].genom[count] = par1->genom[i];
-		count++;
-	}*/
+		child->genom[j] = par2->genom[i];
+	}	
 }
 
 int gensequal2(struct Individ *indiv1, struct Individ *indiv2, struct Figure *figset) 
