@@ -10,7 +10,8 @@
 #include "cmnnest.h"
 
 #define ROTNEST_DEFAULT 0
-#define ROTNEST_FULL 	1
+#define ROTNEST_MORE	1
+#define ROTNEST_FULL 	2
 
 struct NestAttrs {
 	int type;
@@ -77,6 +78,47 @@ static int placefig2(struct Figure *figset, int fignum, struct Position *posits,
 	return placed;
 }
 
+static int placefig1(struct Figure *figset, int fignum, struct Position *posits, int npos, double *minang, double width, double height, double angstep) 
+{
+	int placed = 0, count, i;
+	double angle;
+	double x, ypos, *xpos;
+	struct Figure currfig;
+	
+	xpos = (double*)xcalloc((int)width, sizeof(double));	
+	
+	for (angle = 0.0; angle < 360; angle += angstep) {
+		ypos = height;
+		currfig = figdup(&figset[fignum]);
+		rotate(&currfig, angle);
+		for (x = 0; x < width - currfig.corner.x; x += 1.0) {
+			double ytmp;
+			ytmp = getstart(posits, npos, &currfig, x);
+			if (ytmp < ypos) {
+				ypos = ytmp;
+				count = 0;
+			}	
+
+			xpos[count] = x;
+			count++;
+		}
+		
+		for (i = 0; i < count; i++) {
+			ymove(&xpos[i], &ypos,	&currfig, posits, npos);
+
+			if (checkpos(&currfig, &posits[npos], npos, xpos[i], ypos, height, width, &placed))
+				*minang = angle;
+		}
+				
+		destrfig(&currfig);
+	}
+
+	free(xpos);
+
+	return placed;
+
+}
+ 
 static int placefig0(struct Figure *figset, int fignum, struct Position *posits, int npos, double *minang, double width, double height, double angstep) 
 {
 	int placed = 0;
@@ -92,13 +134,13 @@ static int placefig0(struct Figure *figset, int fignum, struct Position *posits,
 		for (x = 0; x < width - currfig.corner.x; x += 1.0) {
 			double ytmp;
 			ytmp = getstart(posits, npos, &currfig, x);
-			ymove(&xpos, &ypos,	&currfig, posits, npos);
 			if (ytmp < ypos) {
 				ypos = ytmp;
 				xpos = x;
 			}	
 		}
-
+		
+		ymove(&xpos, &ypos,	&currfig, posits, npos);
 
 		if (checkpos(&currfig, &posits[npos], npos, xpos, ypos, height, width, &placed))
 			*minang = angle;
@@ -125,8 +167,10 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 	angstep = attrs->angstep;
 	
 	placefig = placefig0;
-
-	if (attrs->type == ROTNEST_FULL) {
+	if (attrs->type == ROTNEST_MORE) {
+		placefig = placefig1;
+	}
+	else if (attrs->type == ROTNEST_FULL) {
 		placefig = placefig2;
 	}
 

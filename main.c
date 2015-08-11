@@ -212,7 +212,7 @@ int main(int argc, char **argv)
 	attrs.width = width;
 	attrs.height = height;
 	attrs.angstep = 45.0;
-	attrs.type = ROTNEST_DEFAULT;
+	attrs.type = ROTNEST_MORE;
 		
 	figset = makeset(figs, nfigs, &setsize);
 	qsort(figset, setsize, sizeof(struct Figure), figcmp);
@@ -225,12 +225,12 @@ int main(int argc, char **argv)
 	
 		
 	nindivs = 1;	
-	printf("\n\n");
-	for (i = 0; i < 30; i++) {
+	printf("\n");
+	for (i = 0; i < 100; i++) {
 		int nnew = 0, equal = 0, oldn;
 		
 		printf("nindivs=%d\n", nindivs);
-		for (j = 0; j < nindivs; j++) {
+		for (j = 0; j < 1; j++) {
 			printf("ind=%d height=%lf gensize=%d genom: ", i, indivs[j].height, indivs[j].gensize);
 			for (k = 0; k < indivs[j].gensize; k++) { 
 				printf("%d ", indivs[j].genom[k]);
@@ -238,10 +238,10 @@ int main(int argc, char **argv)
 			printf("\n");
 		}
 
-		printf("\n\n");
+		printf("\n");
 
 		oldn = nindivs;
-		for (j = 0; j < oldn - 1; j++) {
+		for (j = 0; j < oldn - 1 && j < 20; j++) {
 			struct Individ heirs[2];
 			if (indivs[j].gensize == indivs[j + 1].gensize && indivs[j].height != INFINITY && indivs[j + 1].height != INFINITY) {
 				crossover(&indivs[j], &indivs[j + 1], &heirs[0], setsize);
@@ -303,7 +303,7 @@ int main(int argc, char **argv)
 		qsort(indivs, nindivs, sizeof(struct Individ), gencmp);
 	}
 
-	printf("LAST NEST MIN_HEIGHT=%lf\n", indivs[0].height);
+	printf("LAST NEST MIN_HEIGHT=%lf GENSIZE=%d\n", indivs[0].height, indivs[0].gensize);
 	rotnest(figset, setsize, &indivs[0], &attrs);
 	return 0;
 }
