@@ -9,6 +9,16 @@
 #include "cmnfuncs.h"
 #include "cmnnest.h"
 
+#define ROTNEST_DEFAULT 0
+#define ROTNEST_FULL 	1
+
+struct NestAttrs {
+	int type;
+	double width, height;
+	double angstep;
+	FILE *logfile;
+};
+
 void ppos2file(struct Position *posits, int npos)
 {
 	int i, j, k;
@@ -38,7 +48,7 @@ void ppos2file(struct Position *posits, int npos)
 }
 
 
-static int placefig(struct Figure *figset, int fignum, struct Position *posits, int npos, double *minang, double width, double height, double angstep) 
+static int placefig2(struct Figure *figset, int fignum, struct Position *posits, int npos, double *minang, double width, double height, double angstep) 
 {
 	int placed = 0;
 	double angle;
@@ -67,16 +77,62 @@ static int placefig(struct Figure *figset, int fignum, struct Position *posits, 
 	return placed;
 }
 
-void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, double width, double height, double angstep)
+static int placefig0(struct Figure *figset, int fignum, struct Position *posits, int npos, double *minang, double width, double height, double angstep) 
+{
+	int placed = 0;
+	double angle;
+	double x, ypos, xpos;
+	struct Figure currfig;
+
+	for (angle = 0.0; angle < 360; angle += angstep) {
+		ypos = height;
+		xpos = 0.0;
+		currfig = figdup(&figset[fignum]);
+		rotate(&currfig, angle);
+		for (x = 0; x < width - currfig.corner.x; x += 1.0) {
+			double ytmp;
+			ytmp = getstart(posits, npos, &currfig, x);
+			ymove(&xpos, &ypos,	&currfig, posits, npos);
+			if (ytmp < ypos) {
+				ypos = ytmp;
+				xpos = x;
+			}	
+		}
+
+
+		if (checkpos(&currfig, &posits[npos], npos, xpos, ypos, height, width, &placed))
+			*minang = angle;
+				
+		destrfig(&currfig);
+	}
+
+	return placed;
+}
+
+void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct NestAttrs *attrs)
 {
 	int i, j, npos;
 	int *mask;
 	double minang, tmpheight;
+	double width, height, angstep;
 	struct Position *posits;
+	int (*placefig)(struct Figure *figset, int fignum, struct Position *posits, int npos, double *minang, double width, double height, double angstep);
+	FILE *logfile;
+
+	logfile = attrs->logfile;
+	width = attrs->width;
+	height = attrs->height;
+	angstep = attrs->angstep;
+	
+	placefig = placefig0;
+
+	if (attrs->type == ROTNEST_FULL) {
+		placefig = placefig2;
+	}
 
 	mask = (int*)xcalloc(setsize, sizeof(int));
 	posits = (struct Position*)xmalloc(sizeof(struct Position) * setsize);
-
+	
 	npos = 0;
 	
 	tmpheight = 0;
@@ -95,7 +151,7 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, double w
 		npos++;
 		
 		tmpheight = (tmpheight > posits[npos - 1].fig.corner.y + posits[npos - 1].y)? tmpheight : posits[npos - 1].fig.corner.y + posits[npos - 1].y;
-		printf("nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", fignum, npos, minang, tmpheight, posits[npos - 1].x, posits[npos - 1].y);
+		fprintf(logfile, "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", fignum, npos, minang, tmpheight, posits[npos - 1].x, posits[npos - 1].y);
 	}
 
 	if (npos < indiv->gensize) {
@@ -122,7 +178,7 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, double w
 		npos++;
 		
 		tmpheight = (tmpheight > posits[npos - 1].fig.corner.y + posits[npos - 1].y)? tmpheight : posits[npos - 1].fig.corner.y + posits[npos - 1].y;
-		printf("nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", i, npos, minang, tmpheight, posits[npos - 1].x, posits[npos - 1].y);		
+		fprintf(logfile, "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", i, npos, minang, tmpheight, posits[npos - 1].x, posits[npos - 1].y);		
 		indiv->genom[npos - 1] = i;
 	}
 	

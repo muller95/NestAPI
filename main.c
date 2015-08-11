@@ -119,6 +119,7 @@ int main(int argc, char **argv)
 	ssize_t chread;
 	size_t n;
 	int i, j, k, m, nindivs;
+	struct NestAttrs attrs;
 	
 	str = NULL;
 	n = 0;
@@ -126,6 +127,7 @@ int main(int argc, char **argv)
 	maxfigs = 128;
 	state = STATE_NEWFIG;
 	nfigs = nprims = npts = 0;
+	attrs.logfile = fopen("./logfile", "w+");
 
 	figs = (struct Figure*)xmalloc(sizeof(struct Figure) * maxfigs);
 
@@ -206,6 +208,11 @@ int main(int argc, char **argv)
 		move_to_zero(&figs[i]);
 		gcenter2(&figs[i]);
 	}
+
+	attrs.width = width;
+	attrs.height = height;
+	attrs.angstep = 45.0;
+	attrs.type = ROTNEST_DEFAULT;
 		
 	figset = makeset(figs, nfigs, &setsize);
 	qsort(figset, setsize, sizeof(struct Figure), figcmp);
@@ -214,12 +221,12 @@ int main(int argc, char **argv)
 	indivs = (struct Individ*)xmalloc(sizeof(struct Individ) * maxindivs);
 	indivs[0].genom = (int*)xmalloc(sizeof(int) * setsize);
 	indivs[0].gensize = 0;
-	rotnest(figset, setsize, &indivs[0], width, height, 45.0);
+	rotnest(figset, setsize, &indivs[0], &attrs);
 	
 		
 	nindivs = 1;	
 	printf("\n\n");
-	for (i = 0; i < 10; i++) {
+	for (i = 0; i < 30; i++) {
 		int nnew = 0, equal = 0, oldn;
 		
 		printf("nindivs=%d\n", nindivs);
@@ -254,7 +261,7 @@ int main(int argc, char **argv)
 
 				if (!equal) {
 					nnew++;
-					rotnest(figset, setsize, &heirs[k], width, height, 45.0);
+					rotnest(figset, setsize, &heirs[k], &attrs);
 					indivs[nindivs] = heirs[k];
 					nindivs++;
 
@@ -281,7 +288,7 @@ int main(int argc, char **argv)
 			}
 			if (!equal) {
 				nnew++;
-				rotnest(figset, setsize, &tmp, width, height, 45.0);
+				rotnest(figset, setsize, &tmp, &attrs);
 				indivs[nindivs] = tmp;
 				nindivs++;
 
@@ -297,6 +304,6 @@ int main(int argc, char **argv)
 	}
 
 	printf("LAST NEST MIN_HEIGHT=%lf\n", indivs[0].height);
-	rotnest(figset, setsize, &indivs[0], 800, 800, 45.0);
+	rotnest(figset, setsize, &indivs[0], &attrs);
 	return 0;
 }
