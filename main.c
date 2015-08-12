@@ -212,7 +212,7 @@ int main(int argc, char **argv)
 	attrs.width = width;
 	attrs.height = height;
 	attrs.angstep = 45.0;
-	attrs.type = ROTNEST_MORE;
+	attrs.type = ROTNEST_DEFAULT;
 		
 	figset = makeset(figs, nfigs, &setsize);
 	qsort(figset, setsize, sizeof(struct Figure), figcmp);
@@ -226,7 +226,7 @@ int main(int argc, char **argv)
 		
 	nindivs = 1;	
 	printf("\n");
-	for (i = 0; i < 100; i++) {
+	for (i = 0; i < 200; i++) {
 		int nnew = 0, equal = 0, oldn;
 		
 		printf("nindivs=%d\n", nindivs);
@@ -302,8 +302,11 @@ int main(int argc, char **argv)
 		}
 		qsort(indivs, nindivs, sizeof(struct Individ), gencmp);
 	}
-
+	
+	qsort(indivs, nindivs, sizeof(struct Individ), gencmp);
 	printf("LAST NEST MIN_HEIGHT=%lf GENSIZE=%d\n", indivs[0].height, indivs[0].gensize);
+	attrs.type = ROTNEST_MORE;
+	attrs.logfile = stdout;
 	rotnest(figset, setsize, &indivs[0], &attrs);
 	return 0;
 }

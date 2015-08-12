@@ -89,6 +89,7 @@ static int placefig1(struct Figure *figset, int fignum, struct Position *posits,
 	
 	for (angle = 0.0; angle < 360; angle += angstep) {
 		ypos = height;
+		count = 0;
 		currfig = figdup(&figset[fignum]);
 		rotate(&currfig, angle);
 		for (x = 0; x < width - currfig.corner.x; x += 1.0) {
@@ -99,14 +100,18 @@ static int placefig1(struct Figure *figset, int fignum, struct Position *posits,
 				count = 0;
 			}	
 
-			xpos[count] = x;
-			count++;
+			if (ytmp == ypos) {
+				xpos[count] = x;
+				count++;
+			}
 		}
 		
 		for (i = 0; i < count; i++) {
-			ymove(&xpos[i], &ypos,	&currfig, posits, npos);
+			double ytmp;
+			ytmp = ypos;
+			ymove(&xpos[i], &ytmp,	&currfig, posits, npos);
 
-			if (checkpos(&currfig, &posits[npos], npos, xpos[i], ypos, height, width, &placed))
+			if (checkpos(&currfig, &posits[npos], npos, xpos[i], ytmp, height, width, &placed))
 				*minang = angle;
 		}
 				

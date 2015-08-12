@@ -138,10 +138,10 @@ int checkpos(struct Figure *currfig, struct Position *lastpos, int npos, double 
 	} else if (*placed == 1) {
 		double gx, gy, mingx, mingy;
 
-		gx = currfig->gcenter.x;
-		gy = currfig->gcenter.y;
-		mingx = lastpos->fig.gcenter.x;
-		mingy = lastpos->fig.gcenter.y;
+		gx = currfig->gcenter.x + xpos;
+		gy = currfig->gcenter.y + ypos;
+		mingx = lastpos->fig.gcenter.x + xpos;
+		mingy = lastpos->fig.gcenter.y + ypos;
 
 		if (ycurr == yprev && (gy < mingy || (gy == mingy && gx < mingx))) {
 			res = 1;
