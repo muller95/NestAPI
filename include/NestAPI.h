@@ -1,0 +1,7 @@
+#include "figure.h"
+#include "nest_structs.h"
+#include "geometry.h"
+#include "cmnfuncs.h"
+#include "rotnest.h"
+#include "cmnnest.h" 
+#include "nestdefs.h"

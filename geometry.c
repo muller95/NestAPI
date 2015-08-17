@@ -2,9 +2,32 @@
 #include <stdio.h>
 #include <math.h>
 #include "figure.h"
+#include "getpoly.h"
+#include "nest_structs.h"
+#include "cmnfuncs.h"
 
+void gcenter(struct Figure *fig);
 void move_to_zero(struct Figure *fig);
 void rotate(struct Figure *fig, double angle);
+
+void gcenter(struct Figure *fig)
+{
+	int i, n;
+	double xsum, ysum;
+	struct Point *pts;
+
+	pts = NULL;
+	n = getpoly(fig, &pts);
+
+	xsum = ysum = 0.0;
+	for (i = 0; i < n; i++) {
+		xsum += pts[i].x;
+		ysum += pts[i].y;
+	}
+	
+	fig->gcenter.x = xsum / (double)n;
+	fig->gcenter.y = ysum / (double)n;
+}
 
 void move_to_zero(struct Figure *fig)
 {

@@ -7,20 +7,27 @@
 #include "nest_structs.h"
 #include "crosscheck.h"
 #include "cmnfuncs.h"
+#include "nestdefs.h"
 
 double getstart(struct Position *posits, int npos, struct Figure *currfig, double x);
 void ymove(double *xpos, double *ypos, struct Figure *currfig, struct Position *posits, int npos);
 void xmove(double *xpos, double *ypos, struct Figure *currfig, struct Position *posits, int npos);
 int checkpos(struct Figure *currfig, struct Position *lastpos, int npos, double xpos, double ypos, double height, double width, int *placed);
-struct Individ mutate(struct Individ *src, int setsize);
+int mutate(struct Individ *src, struct Individ *mutant, int setsize);
 int gensequal(struct Individ *indiv1, struct Individ *indiv2);
 int gensequal2(struct Individ *indiv1, struct Individ *indiv2, struct Figure *figset);
-void crossover(struct Individ *par1, struct Individ *par2, struct Individ childs[2], int setsize);
+int crossover(struct Individ *par1, struct Individ *par2, struct Individ *child, int setsize);
 
-void crossover(struct Individ *par1, struct Individ *par2, struct Individ *child, int setsize)
+int crossover(struct Individ *par1, struct Individ *par2, struct Individ *child, int setsize)
 {
 	int i, j;
 	int g1, g2;
+
+	if (par1->gensize < 3)
+		return SMALL_INDIVID;
+
+	if (par1->gensize != par2->gensize)
+		return DIFFERENT_SIZE;
 
 	srand(time(NULL));
 
@@ -49,7 +56,9 @@ void crossover(struct Individ *par1, struct Individ *par2, struct Individ *child
 		}
 
 		child->genom[j] = par2->genom[i];
-	}	
+	}
+	
+	return SUCCESSFUL;	
 }
 
 int gensequal2(struct Individ *indiv1, struct Individ *indiv2, struct Figure *figset) 
@@ -66,10 +75,10 @@ int gensequal2(struct Individ *indiv1, struct Individ *indiv2, struct Figure *fi
 		b = indiv2->genom[i];
 
 		if (figset[a].id != figset[b].id)
-			return 0;
+			return INDIVIDS_UNEQUAL;
 	}
 
-	return 1;
+	return INDIVIDS_EQUAL;
 }
 
 int gensequal(struct Individ *indiv1, struct Individ *indiv2) 
@@ -81,52 +90,56 @@ int gensequal(struct Individ *indiv1, struct Individ *indiv2)
 
 	for (i = 0; i < indiv1->gensize; i++)
 		if (indiv1->genom[i] != indiv2->genom[i])
-			return 0;
+			return INDIVIDS_UNEQUAL;
 
-	return 1;
+	return INDIVIDS_EQUAL;
 }
 
-struct Individ mutate(struct Individ *src, int setsize)
+int mutate(struct Individ *src, struct Individ *mutant, int setsize)
 {
  	int n1, n2, tmp, i;
-	struct Individ new;
 
-	new.gensize = src->gensize;
-	new.genom = (int*)xmalloc(sizeof(int*) * setsize);
+	if (src->gensize == 1)
+		return SMALL_INDIVID;
+
+	mutant->gensize = src->gensize;
+	mutant->genom = (int*)xmalloc(sizeof(int*) * setsize);
     
 	srand(time(NULL));
 
-	n1 = rand() % (src->gensize);
+	n1 = rand() % (src->gensize - 1);
 	n2 = rand() % (src->gensize);
 
 	while (n1 == n2) 
 		n2 = rand() % (src->gensize);
     
 	for (i = 0; i < src->gensize; i++)
-		new.genom[i] = src->genom[i];
+		mutant->genom[i] = src->genom[i];
 		
-	tmp = new.genom[n1];
-	new.genom[n1] = new.genom[n2];
-	new.genom[n2] = tmp;
+	tmp = mutant->genom[n1];
+	mutant->genom[n1] = mutant->genom[n2];
+	mutant->genom[n2] = tmp;
 
-	return new;
+	return SUCCESSFUL;
 }
 
 int checkpos(struct Figure *currfig, struct Position *lastpos, int npos, double xpos, double ypos, double height, double width, int *placed)
 {
 	int res = 0;
-	double ycurr, yprev;
+	double xcurr, xprev, ycurr, yprev;
 
 
-	if (currfig->corner.y + ypos >= height)				
+	if (currfig->corner.y + ypos >= height || xpos + currfig->corner.x >= width)				
 		return 0;
 
-	if (xpos + currfig->corner.x >= width)
-		return 0;
+/*	if (xpos + currfig->corner.x >= width)
+		return 0;*/
 
 	if (*placed == 1) {
 		ycurr = ypos + currfig->corner.y;
+		xcurr = xpos + currfig->corner.x;
 		yprev = lastpos->y + lastpos->fig.corner.y;
+		xprev = lastpos->x + lastpos->fig.corner.x;
 	}
 
 	if (*placed == 0 || ycurr < yprev) {
@@ -136,14 +149,14 @@ int checkpos(struct Figure *currfig, struct Position *lastpos, int npos, double 
 		lastpos->x = xpos;
 		lastpos->y = ypos;
 	} else if (*placed == 1) {
-		double gx, gy, mingx, mingy;
+		double /*gx,*/ gy, /*mingx,*/ mingy;
 
-		gx = currfig->gcenter.x + xpos;
+//		gx = currfig->gcenter.x + xpos;
 		gy = currfig->gcenter.y + ypos;
-		mingx = lastpos->fig.gcenter.x + xpos;
+//		mingx = lastpos->fig.gcenter.x + xpos;
 		mingy = lastpos->fig.gcenter.y + ypos;
 
-		if (ycurr == yprev && (gy < mingy || (gy == mingy && gx < mingx))) {
+		if (ycurr == yprev && (gy < mingy || (gy == mingy && xcurr < xprev))) {
 			res = 1;
 			destrfig(&(lastpos->fig));
 			lastpos->fig = figdup(currfig);
