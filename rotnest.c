@@ -13,41 +13,6 @@
 #define ROTNEST_MORE	1
 #define ROTNEST_FULL 	2
 
-struct NestAttrs {
-	int type;
-	double width, height;
-	double angstep;
-	FILE *logfile;
-};
-
-void ppos2file(struct Position *posits, int npos)
-{
-	int i, j, k;
-	FILE *file;
-
-	if (!(file = fopen("./drawposits", "w+"))) {
-		printf("error while creating file\n");
-		exit(1);
-	}
-	
-	for (i = 0; i < npos; i++) {
-		fprintf(file, "%lf\n", posits[i].fig.gcenter.x + posits[i].x);
-		fprintf(file, "%lf\n", posits[i].fig.gcenter.y + posits[i].y);
-		fprintf(file, "%lf\n", posits[i].fig.gcenter.x + posits[i].x);
-		fprintf(file, "%lf\n", posits[i].fig.gcenter.y + posits[i].y);
-		for (j = 0; j < posits[i].fig.nprims; j++) {
-			for (k = 0; k < posits[i].fig.prims[j].npts - 1; k++) {
-				fprintf(file, "%lf\n", posits[i].fig.prims[j].pts[k].x + posits[i].x);
-				fprintf(file, "%lf\n", posits[i].fig.prims[j].pts[k].y + posits[i].y);
-				fprintf(file, "%lf\n", posits[i].fig.prims[j].pts[k + 1].x + posits[i].x);
-				fprintf(file, "%lf\n", posits[i].fig.prims[j].pts[k + 1].y + posits[i].y);
-			}
-		}
-	}
-
-	fclose(file);
-}
-
 
 static int placefig2(struct Figure *figset, int fignum, struct Position *posits, int npos, double *minang, double width, double height, double angstep) 
 {
@@ -130,7 +95,7 @@ static int placefig0(struct Figure *figset, int fignum, struct Position *posits,
 	double angle;
 	double x, ypos, xpos;
 	struct Figure currfig;
-
+//	printf("\n");
 	for (angle = 0.0; angle < 360; angle += angstep) {
 		ypos = height;
 		xpos = 0.0;
@@ -146,17 +111,22 @@ static int placefig0(struct Figure *figset, int fignum, struct Position *posits,
 		}
 		
 		ymove(&xpos, &ypos,	&currfig, posits, npos);
-
-		if (checkpos(&currfig, &posits[npos], npos, xpos, ypos, height, width, &placed))
+		//printf("fignum=%d angle=%lf x=%lf y=%lf corner.y=%lf height=%lf\n", fignum, angle, xpos, ypos, currfig.corner.y, ypos + currfig.corner.y);
+		if (checkpos(&currfig, &posits[npos], npos, xpos, ypos, height, width, &placed)) {
+			//printf("\n");		
+			//printf("prevang=%lf ang=%lf\n", *minang, angle);
 			*minang = angle;
+		}
 				
 		destrfig(&currfig);
 	}
 
+	//printf("\n");
+
 	return placed;
 }
 
-void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct NestAttrs *attrs)
+void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct NestAttrs *attrs, struct NestResult *out)
 {
 	int i, j, npos;
 	int *mask;
@@ -192,6 +162,7 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 		fignum = indiv->genom[i];
 	
 		if (!placefig(figset, fignum, posits, npos, &minang, width, height, angstep)) {
+			fprintf(logfile, "fail to position %d\n", fignum);
 			continue;
 		}
 
@@ -201,10 +172,13 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 		
 		tmpheight = (tmpheight > posits[npos - 1].fig.corner.y + posits[npos - 1].y)? tmpheight : posits[npos - 1].fig.corner.y + posits[npos - 1].y;
 		fprintf(logfile, "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", fignum, npos, minang, tmpheight, posits[npos - 1].x, posits[npos - 1].y);
+		sprintf(indiv->nestlog[npos - 1], "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", fignum, npos, minang, tmpheight, posits[npos - 1].x, posits[npos - 1].y);
 	}
 
 	if (npos < indiv->gensize) {
 		indiv->height = INFINITY;
+	//	indiv->posits = posits;
+	//	indiv->npos = npos;	
 		free(posits);
 		return;
 	}
@@ -227,12 +201,20 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 		npos++;
 		
 		tmpheight = (tmpheight > posits[npos - 1].fig.corner.y + posits[npos - 1].y)? tmpheight : posits[npos - 1].fig.corner.y + posits[npos - 1].y;
-		fprintf(logfile, "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", i, npos, minang, tmpheight, posits[npos - 1].x, posits[npos - 1].y);		
+		fprintf(logfile, "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", i, npos, minang, tmpheight, posits[npos - 1].x, posits[npos - 1].y);	
+		sprintf(indiv->nestlog[npos - 1], "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", i, npos, minang, tmpheight, posits[npos - 1].x, posits[npos - 1].y);
 		indiv->genom[npos - 1] = i;
 	}
 	
 	indiv->gensize = npos;
 	indiv->height = tmpheight;
-	ppos2file(posits, npos);
-	free(posits);
+	indiv->posits = posits;
+	indiv->npos = npos;	
+
+	if (out == NULL) {
+//		free(posits);
+	} else { 
+		out->posits = posits;
+		out->npos = npos;
+	}
 }

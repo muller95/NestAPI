@@ -5,12 +5,6 @@
 #include <assert.h>
 #include <math.h>
 #include <NestAPI.h>
-/*#include "figure.h"
-#include "nest_structs.h"
-#include "geometry.h"
-#include "cmnfuncs.h"
-#include "rotnest.h"
-#include "cmnnest.h" */
 
 #define FIG_SEPAR ":"
 #define PRIM_SEPAR ""
@@ -28,6 +22,36 @@ void trim(char *str)
 		}
 	}
 }
+
+
+void ppos2file(char *path, struct Position *posits, int npos)
+{
+	int i, j, k;
+	FILE *file;
+
+	if (!(file = fopen(path, "w+"))) {
+		printf("error while creating file\n");
+		exit(1);
+	}
+	
+	for (i = 0; i < npos; i++) {
+		fprintf(file, "%lf\n", posits[i].fig.gcenter.x + posits[i].x);
+		fprintf(file, "%lf\n", posits[i].fig.gcenter.y + posits[i].y);
+		fprintf(file, "%lf\n", posits[i].fig.gcenter.x + posits[i].x);
+		fprintf(file, "%lf\n", posits[i].fig.gcenter.y + posits[i].y);
+		for (j = 0; j < posits[i].fig.nprims; j++) {
+			for (k = 0; k < posits[i].fig.prims[j].npts - 1; k++) {
+				fprintf(file, "%lf\n", posits[i].fig.prims[j].pts[k].x + posits[i].x);
+				fprintf(file, "%lf\n", posits[i].fig.prims[j].pts[k].y + posits[i].y);
+				fprintf(file, "%lf\n", posits[i].fig.prims[j].pts[k + 1].x + posits[i].x);
+				fprintf(file, "%lf\n", posits[i].fig.prims[j].pts[k + 1].y + posits[i].y);
+			}
+		}
+	}
+
+	fclose(file);
+}
+
 
 void pfig(struct Figure fig)
 {
@@ -121,6 +145,9 @@ int main(int argc, char **argv)
 	size_t n;
 	int i, j, k, m, nindivs;
 	struct NestAttrs attrs;
+	struct NestResult out;
+
+	printf("%s\n", argv[1]);
 	
 	str = NULL;
 	n = 0;
@@ -222,7 +249,35 @@ int main(int argc, char **argv)
 	indivs = (struct Individ*)xmalloc(sizeof(struct Individ) * maxindivs);
 	indivs[0].genom = (int*)xmalloc(sizeof(int) * setsize);
 	indivs[0].gensize = 0;
-	rotnest(figset, setsize, &indivs[0], &attrs);
+
+
+/*----------------------------------------------*/
+/*	struct Individ test;
+	//0 2 11 3 8 9 6 10 1 7 4 16 5 12  
+	test.genom = (int*)xmalloc(sizeof(int) * setsize);
+	test.genom[0] = 0;
+	test.genom[1] = 2;
+	test.genom[2] = 11;
+	test.genom[3] = 3;
+	test.genom[4] = 8;
+	test.genom[5] = 9;
+	test.genom[6] = 6;
+	test.genom[7] = 10;
+	test.genom[8] = 1;
+	test.genom[9] = 7;
+	test.genom[10] = 4;
+	test.genom[11] = 16;
+	test.genom[12] = 5;
+	test.genom[13] = 12;
+	test.gensize = 14; 
+	attrs.logfile = stdout;
+	rotnest(figset, setsize, &test, &attrs, NULL);
+	printf("fail npos=%d\n", test.npos);
+	ppos2file("/home/vadim/test", test.posits, test.npos);	
+	return 0;*/
+
+/*-------------------------------------------------*/
+	rotnest(figset, setsize, &indivs[0], &attrs, NULL);
 	
 		
 	nindivs = 1;	
@@ -231,16 +286,16 @@ int main(int argc, char **argv)
 	for (i = 0; i < 800 && !ext; i++) {
 		int nnew = 0, equal = 0, oldn;
 		
-		printf("nindivs=%d\n", nindivs);
+	//	printf("nindivs=%d\n", nindivs);
 		for (j = 0; j < 1; j++) {
-			printf("ind=%d height=%lf gensize=%d genom: ", i, indivs[j].height, indivs[j].gensize);
+			//printf("ind=%d height=%lf gensize=%d genom: ", i, indivs[j].height, indivs[j].gensize);
 			for (k = 0; k < indivs[j].gensize; k++) { 
-				printf("%d ", indivs[j].genom[k]);
+			//	printf("%d ", indivs[j].genom[k]);
 			}
-			printf("\n");
+	//		printf("\n");
 		}
 
-		printf("\n");
+//		printf("\n");
 
 		oldn = nindivs;
 		for (j = 0; j < oldn - 1 && nnew < 30; j++) {
@@ -249,7 +304,7 @@ int main(int argc, char **argv)
 				int res;
 				res = crossover(&indivs[j], &indivs[j + 1], &heirs[0], setsize);
 				crossover(&indivs[j + 1], &indivs[j], &heirs[1], setsize);
-				
+	
 				if (res < 0) {
 					break;
 				}
@@ -269,7 +324,7 @@ int main(int argc, char **argv)
 
 				if (!equal) {
 					nnew++;
-					rotnest(figset, setsize, &heirs[k], &attrs);
+					rotnest(figset, setsize, &heirs[k], &attrs, NULL);
 					indivs[nindivs] = heirs[k];
 					nindivs++;
 
@@ -302,7 +357,7 @@ int main(int argc, char **argv)
 			}
 			if (!equal) {
 				nnew++;
-				rotnest(figset, setsize, &tmp, &attrs);
+				rotnest(figset, setsize, &tmp, &attrs, NULL);
 				indivs[nindivs] = tmp;
 				nindivs++;
 
@@ -317,9 +372,45 @@ int main(int argc, char **argv)
 		qsort(indivs, nindivs, sizeof(struct Individ), gencmp);
 	}
 	
-	qsort(indivs, nindivs, sizeof(struct Individ), gencmp);
+//	qsort(indivs, nindivs, sizeof(struct Individ), gencmp);
+
+	printf("nindivs=%d\n", nindivs);
 	printf("LAST NEST MIN_HEIGHT=%lf GENSIZE=%d\n", indivs[0].height, indivs[0].gensize);
+	for (j = 0; j < 1; j++) {
+		printf("ind=%d height=%lf gensize=%d genom: ", i, indivs[j].height, indivs[j].gensize);
+		for (k = 0; k < indivs[j].gensize; k++) { 
+			printf("%d ", indivs[j].genom[k]);
+		}
+		printf("\n");
+	}
+
+	int mut = (indivs[0].par2 == NULL)? 1 : 0;
+	printf("%s g1=%d g2=%d\n", (mut)? "MUTANT" : "CROSSOVER", indivs[0].g1, indivs[0].g2);
+
+	printf("gensize=%d par1: ", indivs[0].gensize1);
+	for (k = 0; k < indivs[0].gensize1; k++) { 
+		printf("%d ", indivs[0].par1[k]);
+	}
+
+	printf("\n");
+	if (!mut) {
+		printf("gensize=%d par2: ", indivs[0].gensize2);
+		for (k = 0; k < indivs[0].gensize2; k++) { 
+			printf("%d ", indivs[0].par2[k]);
+		}
+	}
+
+	printf("\n\nPREVIOUS LOG\n");
+	for (i = 0; i < indivs[0].npos; i++) {
+		printf("%s", indivs[0].nestlog[i]);
+	}
+	printf("\n\n");
+	
 	attrs.logfile = stdout;
-	rotnest(figset, setsize, &indivs[0], &attrs);
+	ppos2file(argv[1], indivs[0].posits, indivs[0].npos);
+	rotnest(figset, setsize, &indivs[0], &attrs, &out);
+	printf("LAST npos=%d\n", out.npos);
+	printf("\n\n\n");
+//	ppos2file(out.posits, out.npos);
 	return 0;
 }

@@ -3,6 +3,8 @@
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
+#include <float.h>
+#include <math.h>
 #include "figure.h"
 #include "nest_structs.h"
 #include "crosscheck.h"
@@ -37,6 +39,12 @@ int crossover(struct Individ *par1, struct Individ *par2, struct Individ *child,
 	while (g1 == g2) 
 		g2 = rand() % (par1->gensize);
 
+	child->par1 = par1->genom;
+	child->par2 = par2->genom;
+	child->gensize1 = par1->gensize;
+	child->gensize2 = par2->gensize;
+	child->g1 = g1;
+	child->g2 = g2;
 	
 	child->genom = (int*)xmalloc(sizeof(int) * setsize);
 	child->gensize = par1->gensize;
@@ -101,7 +109,7 @@ int mutate(struct Individ *src, struct Individ *mutant, int setsize)
 
 	if (src->gensize == 1)
 		return SMALL_INDIVID;
-
+	
 	mutant->gensize = src->gensize;
 	mutant->genom = (int*)xmalloc(sizeof(int*) * setsize);
     
@@ -112,7 +120,14 @@ int mutate(struct Individ *src, struct Individ *mutant, int setsize)
 
 	while (n1 == n2) 
 		n2 = rand() % (src->gensize);
-    
+
+	
+	mutant->par1 = src->genom;
+	mutant->par2 = NULL;
+	mutant->gensize1 = src->gensize;
+	mutant->g1 = n1;
+	mutant->g2 = n2;
+	    
 	for (i = 0; i < src->gensize; i++)
 		mutant->genom[i] = src->genom[i];
 		
@@ -132,31 +147,28 @@ int checkpos(struct Figure *currfig, struct Position *lastpos, int npos, double 
 	if (currfig->corner.y + ypos >= height || xpos + currfig->corner.x >= width)				
 		return 0;
 
-/*	if (xpos + currfig->corner.x >= width)
-		return 0;*/
 
-	if (*placed == 1) {
-		ycurr = ypos + currfig->corner.y;
-		xcurr = xpos + currfig->corner.x;
-		yprev = lastpos->y + lastpos->fig.corner.y;
-		xprev = lastpos->x + lastpos->fig.corner.x;
-	}
 
-	if (*placed == 0 || ycurr < yprev) {
+	if (*placed == 0) {
 		*placed = 1;
 		res = 1;
 		lastpos->fig = figdup(currfig);
 		lastpos->x = xpos;
 		lastpos->y = ypos;
 	} else if (*placed == 1) {
-		double /*gx,*/ gy, /*mingx,*/ mingy;
+		double gy, mingy;
 
-//		gx = currfig->gcenter.x + xpos;
+		ycurr = ypos + currfig->corner.y;
+		xcurr = xpos + currfig->corner.x;
+		yprev = lastpos->y + lastpos->fig.corner.y;
+		xprev = lastpos->x + lastpos->fig.corner.x;
+
 		gy = currfig->gcenter.y + ypos;
-//		mingx = lastpos->fig.gcenter.x + xpos;
-		mingy = lastpos->fig.gcenter.y + ypos;
+		mingy = lastpos->fig.gcenter.y + lastpos->y;
 
-		if (ycurr == yprev && (gy < mingy || (gy == mingy && xcurr < xprev))) {
+		if ((yprev - ycurr > DBL_EPSILON) || 
+			((fabs(ycurr - yprev) < DBL_EPSILON && mingy - gy > DBL_EPSILON) || 
+			(fabs(ycurr - yprev) < DBL_EPSILON && fabs(gy - mingy) < DBL_EPSILON && xprev - xcurr > DBL_EPSILON))) {
 			res = 1;
 			destrfig(&(lastpos->fig));
 			lastpos->fig = figdup(currfig);
@@ -217,7 +229,6 @@ void xmove(double *xpos, double *ypos, struct Figure *currfig, struct Position *
 			res = crosscheck(currfig, &posits[i].fig, offset, posoffset);
 
 			if (res == 1){
-				//printf("npos=%d x=%lf y=%lf\n", npos, x, y);
 				break;
 			}
 		}
@@ -228,7 +239,7 @@ void xmove(double *xpos, double *ypos, struct Figure *currfig, struct Position *
 		*xpos = x;
 	}
 	
-	if (xprev != *xpos)
+	if (fabs(xprev - *xpos) > DBL_EPSILON)
 		ymove(xpos, ypos, currfig, posits, npos);    
 }
 
@@ -256,7 +267,6 @@ void ymove(double *xpos, double *ypos, struct Figure *currfig, struct Position *
 			res = crosscheck(currfig, &posits[i].fig, offset, posoffset);
 
 			if (res == 1) {
-			//	printf("npos=%d x=%lf y=%lf\n", npos, x, y);
 				break;
 			}
 		}
