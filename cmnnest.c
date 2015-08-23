@@ -14,7 +14,7 @@
 double getstart(struct Position *posits, int npos, struct Figure *currfig, double x);
 void ymove(double *xpos, double *ypos, struct Figure *currfig, struct Position *posits, int npos);
 void xmove(double *xpos, double *ypos, struct Figure *currfig, struct Position *posits, int npos);
-int checkpos(struct Figure *currfig, struct Position *lastpos, int npos, double xpos, double ypos, double height, double width, int *placed);
+int checkpos(struct Figure *currfig, struct Position *lastpos, double xpos, double ypos, double height, double width, int *placed);
 int mutate(struct Individ *src, struct Individ *mutant, int setsize);
 int gensequal(struct Individ *indiv1, struct Individ *indiv2);
 int gensequal2(struct Individ *indiv1, struct Individ *indiv2, struct Figure *figset);
@@ -138,13 +138,15 @@ int mutate(struct Individ *src, struct Individ *mutant, int setsize)
 	return SUCCESSFUL;
 }
 
-int checkpos(struct Figure *currfig, struct Position *lastpos, int npos, double xpos, double ypos, double height, double width, int *placed)
+int checkpos(struct Figure *currfig, struct Position *lastpos, double xpos, double ypos, double height, double width, int *placed)
 {
 	int res = 0;
-	double xcurr, xprev, ycurr, yprev;
+	double hcurr, wcurr;
 
+	hcurr = currfig->corner.y + ypos;
+	wcurr = xpos + currfig->corner.x;
 
-	if (currfig->corner.y + ypos >= height || xpos + currfig->corner.x >= width)				
+	if (hcurr >= height ||  wcurr >= width)				
 		return 0;
 
 
@@ -156,19 +158,17 @@ int checkpos(struct Figure *currfig, struct Position *lastpos, int npos, double 
 		lastpos->x = xpos;
 		lastpos->y = ypos;
 	} else if (*placed == 1) {
-		double gy, mingy;
+		double hprev, wprev, gy, mingy;
 
-		ycurr = ypos + currfig->corner.y;
-		xcurr = xpos + currfig->corner.x;
-		yprev = lastpos->y + lastpos->fig.corner.y;
-		xprev = lastpos->x + lastpos->fig.corner.x;
+		hprev = lastpos->y + lastpos->fig.corner.y;
+		wprev = lastpos->x + lastpos->fig.corner.x;
 
 		gy = currfig->gcenter.y + ypos;
 		mingy = lastpos->fig.gcenter.y + lastpos->y;
 
-		if ((yprev - ycurr > DBL_EPSILON) || 
-			((fabs(ycurr - yprev) < DBL_EPSILON && mingy - gy > DBL_EPSILON) || 
-			(fabs(ycurr - yprev) < DBL_EPSILON && fabs(gy - mingy) < DBL_EPSILON && xprev - xcurr > DBL_EPSILON))) {
+		if (hcurr < hprev || 
+			((fabs(hcurr - hprev) < DBL_EPSILON && gy < mingy) || 
+			(fabs(hcurr - hprev) < DBL_EPSILON && fabs(gy - mingy) < DBL_EPSILON && wcurr < wprev))) {
 			res = 1;
 			destrfig(&(lastpos->fig));
 			lastpos->fig = figdup(currfig);

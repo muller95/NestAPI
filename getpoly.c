@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <float.h>
 #include "figure.h"
 #include "nest_structs.h"
 #include "cmnfuncs.h"
@@ -87,10 +88,10 @@ int getpoly(struct Figure *fig, struct Point **pts)
 				tmpvec = getvec(curr, tmp);
 				crossprod = vec.x * tmpvec.y - vec.y * tmpvec.x;
 				
-				if (crossprod < 0) {
+				if (crossprod < 0.0) {
 					vec = tmpvec;
 					next = tmp;
-				}	else if (crossprod == 0 && veclen(tmpvec) > veclen(vec)) {
+				}	else if (fabs(crossprod) < DBL_EPSILON && veclen(tmpvec) > veclen(vec)) {
 					vec = tmpvec;
 					next = tmp;
 				}

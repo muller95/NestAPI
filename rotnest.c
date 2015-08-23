@@ -30,7 +30,7 @@ static int placefig2(struct Figure *figset, int fignum, struct Position *posits,
 			ypos = getstart(posits, npos, &currfig, x);
 			ymove(&xpos, &ypos,	&currfig, posits, npos);
 				
-			if (checkpos(&currfig, &posits[npos], npos, xpos, ypos, height, width, &placed))
+			if (checkpos(&currfig, &posits[npos], xpos, ypos, height, width, &placed))
 				*minang = angle;
 			
 			if (ypos == 0)
@@ -76,7 +76,7 @@ static int placefig1(struct Figure *figset, int fignum, struct Position *posits,
 			ytmp = ypos;
 			ymove(&xpos[i], &ytmp,	&currfig, posits, npos);
 
-			if (checkpos(&currfig, &posits[npos], npos, xpos[i], ytmp, height, width, &placed))
+			if (checkpos(&currfig, &posits[npos], xpos[i], ytmp, height, width, &placed))
 				*minang = angle;
 		}
 				
@@ -112,7 +112,7 @@ static int placefig0(struct Figure *figset, int fignum, struct Position *posits,
 		
 		ymove(&xpos, &ypos,	&currfig, posits, npos);
 		//printf("fignum=%d angle=%lf x=%lf y=%lf corner.y=%lf height=%lf\n", fignum, angle, xpos, ypos, currfig.corner.y, ypos + currfig.corner.y);
-		if (checkpos(&currfig, &posits[npos], npos, xpos, ypos, height, width, &placed)) {
+		if (checkpos(&currfig, &posits[npos], xpos, ypos, height, width, &placed)) {
 			//printf("\n");		
 			//printf("prevang=%lf ang=%lf\n", *minang, angle);
 			*minang = angle;
