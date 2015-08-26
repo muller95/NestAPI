@@ -95,7 +95,7 @@ static int placefig0(struct Figure *figset, int fignum, struct Position *posits,
 	double angle;
 	double x, ypos, xpos;
 	struct Figure currfig;
-//	printf("\n");
+	
 	for (angle = 0.0; angle < 360; angle += angstep) {
 		ypos = height;
 		xpos = 0.0;
@@ -111,22 +111,17 @@ static int placefig0(struct Figure *figset, int fignum, struct Position *posits,
 		}
 		
 		ymove(&xpos, &ypos,	&currfig, posits, npos);
-		//printf("fignum=%d angle=%lf x=%lf y=%lf corner.y=%lf height=%lf\n", fignum, angle, xpos, ypos, currfig.corner.y, ypos + currfig.corner.y);
 		if (checkpos(&currfig, &posits[npos], xpos, ypos, height, width, &placed)) {
-			//printf("\n");		
-			//printf("prevang=%lf ang=%lf\n", *minang, angle);
 			*minang = angle;
 		}
 				
 		destrfig(&currfig);
 	}
 
-	//printf("\n");
-
 	return placed;
 }
 
-void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct NestAttrs *attrs, struct NestResult *out)
+void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct NestAttrs *attrs)
 {
 	int i, j, npos;
 	int *mask;
@@ -172,13 +167,11 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 		
 		tmpheight = (tmpheight > posits[npos - 1].fig.corner.y + posits[npos - 1].y)? tmpheight : posits[npos - 1].fig.corner.y + posits[npos - 1].y;
 		fprintf(logfile, "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", fignum, npos, minang, tmpheight, posits[npos - 1].x, posits[npos - 1].y);
-		sprintf(indiv->nestlog[npos - 1], "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", fignum, npos, minang, tmpheight, posits[npos - 1].x, posits[npos - 1].y);
 	}
 
 	if (npos < indiv->gensize) {
 		indiv->height = INFINITY;
-	//	indiv->posits = posits;
-	//	indiv->npos = npos;	
+		indiv->posits = NULL;
 		free(posits);
 		return;
 	}
@@ -202,7 +195,6 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 		
 		tmpheight = (tmpheight > posits[npos - 1].fig.corner.y + posits[npos - 1].y)? tmpheight : posits[npos - 1].fig.corner.y + posits[npos - 1].y;
 		fprintf(logfile, "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", i, npos, minang, tmpheight, posits[npos - 1].x, posits[npos - 1].y);	
-		sprintf(indiv->nestlog[npos - 1], "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", i, npos, minang, tmpheight, posits[npos - 1].x, posits[npos - 1].y);
 		indiv->genom[npos - 1] = i;
 	}
 	
@@ -210,11 +202,4 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 	indiv->height = tmpheight;
 	indiv->posits = posits;
 	indiv->npos = npos;	
-
-	if (out == NULL) {
-//		free(posits);
-	} else { 
-		out->posits = posits;
-		out->npos = npos;
-	}
 }

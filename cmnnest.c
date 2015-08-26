@@ -120,14 +120,7 @@ int mutate(struct Individ *src, struct Individ *mutant, int setsize)
 
 	while (n1 == n2) 
 		n2 = rand() % (src->gensize);
-
-	
-	mutant->par1 = src->genom;
-	mutant->par2 = NULL;
-	mutant->gensize1 = src->gensize;
-	mutant->g1 = n1;
-	mutant->g2 = n2;
-	    
+ 
 	for (i = 0; i < src->gensize; i++)
 		mutant->genom[i] = src->genom[i];
 		

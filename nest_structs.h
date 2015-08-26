@@ -16,12 +16,6 @@ struct Individ {
 	int npos;
 };
 
-struct NestResult {
-	struct Position *posits;
-	int npos;
-};
-
-
 struct NestAttrs {
 	int type;
 	double width, height;
