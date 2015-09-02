@@ -154,8 +154,6 @@ int main(int argc, char **argv)
 	maxfigs = 128;
 	state = STATE_NEWFIG;
 	nfigs = nprims = npts = 0;
-	attrs.logfile = fopen("./logfile", "w+");
-
 	figs = (struct Figure*)xmalloc(sizeof(struct Figure) * maxfigs);
 
 	while ((chread = getline(&str, &n, stdin)) != -1) {
@@ -232,7 +230,7 @@ int main(int argc, char **argv)
 	}
 
 	for (i = 0; i < nfigs; i++) {
-		move_to_zero(&figs[i]);
+		move_to_zero(&figs[i], &figs[i].t1);
 		gcenter(&figs[i]);
 	}
 
@@ -240,6 +238,8 @@ int main(int argc, char **argv)
 	attrs.height = height;
 	attrs.angstep = 45.0;
 	attrs.type = ROTNEST_DEFAULT;
+	attrs.logfile = fopen("./logfile", "w+");
+
 		
 	figset = makeset(figs, nfigs, &setsize);
 	qsort(figset, setsize, sizeof(struct Figure), figcmp);
@@ -355,6 +355,9 @@ int main(int argc, char **argv)
 		printf("\n");
 	}
 
-	ppos2file(argv[1], indivs[0].posits, indivs[0].npos);
+	attrs.logfile = stdout;
+	rotnest(figset, setsize, &indivs[0], &attrs);
+	printf("\n\n");
+//	ppos2file(argv[1], indivs[0].posits, indivs[0].npos);
 	return 0;
 }

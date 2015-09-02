@@ -44,6 +44,9 @@ struct Figure figdup(struct Figure *src)
 	fig.gcenter.x = src->gcenter.x;
 	fig.gcenter.y = src->gcenter.y;
 
+	fig.t1 = src->t1;
+	fig.t2 = src->t2; 
+
 
 	fig.prims = (struct Primitive*)xmalloc(sizeof(struct Primitive) * fig.nprims);
 

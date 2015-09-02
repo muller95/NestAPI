@@ -12,4 +12,5 @@ struct Figure {
 	int nprims, quant;
 	struct Primitive *prims;
 	struct Point gcenter, corner;
+	struct Point t1, t2;
 };

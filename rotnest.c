@@ -14,14 +14,14 @@
 #define ROTNEST_FULL 	2
 
 
-static int placefig2(struct Figure *figset, int fignum, struct Position *posits, int npos, double *minang, double width, double height, double angstep) 
+static int placefig2(struct Figure *figset, int fignum, struct Position *posits, int npos, double width, double height, int angstep) 
 {
 	int placed = 0;
 	double angle;
 	double x, ypos, xpos;
 	struct Figure currfig;
 
-	for (angle = 0.0; angle < 360; angle += angstep) {
+	for (angle = 0; angle < 360; angle += angstep) {
 		currfig = figdup(&figset[fignum]);
 		rotate(&currfig, angle);
 
@@ -31,7 +31,7 @@ static int placefig2(struct Figure *figset, int fignum, struct Position *posits,
 			ymove(&xpos, &ypos,	&currfig, posits, npos);
 				
 			if (checkpos(&currfig, &posits[npos], xpos, ypos, height, width, &placed))
-				*minang = angle;
+				posits[npos].angle = angle;
 			
 			if (ypos == 0)
 				break; 			
@@ -43,7 +43,7 @@ static int placefig2(struct Figure *figset, int fignum, struct Position *posits,
 	return placed;
 }
 
-static int placefig1(struct Figure *figset, int fignum, struct Position *posits, int npos, double *minang, double width, double height, double angstep) 
+static int placefig1(struct Figure *figset, int fignum, struct Position *posits, int npos, double width, double height, int angstep) 
 {
 	int placed = 0, count, i;
 	double angle;
@@ -52,7 +52,7 @@ static int placefig1(struct Figure *figset, int fignum, struct Position *posits,
 	
 	xpos = (double*)xcalloc((int)width, sizeof(double));	
 	
-	for (angle = 0.0; angle < 360; angle += angstep) {
+	for (angle = 0; angle < 360; angle += angstep) {
 		ypos = height;
 		count = 0;
 		currfig = figdup(&figset[fignum]);
@@ -77,7 +77,7 @@ static int placefig1(struct Figure *figset, int fignum, struct Position *posits,
 			ymove(&xpos[i], &ytmp,	&currfig, posits, npos);
 
 			if (checkpos(&currfig, &posits[npos], xpos[i], ytmp, height, width, &placed))
-				*minang = angle;
+				posits[npos].angle = angle;
 		}
 				
 		destrfig(&currfig);
@@ -89,14 +89,14 @@ static int placefig1(struct Figure *figset, int fignum, struct Position *posits,
 
 }
  
-static int placefig0(struct Figure *figset, int fignum, struct Position *posits, int npos, double *minang, double width, double height, double angstep) 
+static int placefig0(struct Figure *figset, int fignum, struct Position *posits, int npos, double width, double height, int angstep) 
 {
 	int placed = 0;
 	double angle;
 	double x, ypos, xpos;
 	struct Figure currfig;
 	
-	for (angle = 0.0; angle < 360; angle += angstep) {
+	for (angle = 0; angle < 360; angle += angstep) {
 		ypos = height;
 		xpos = 0.0;
 		currfig = figdup(&figset[fignum]);
@@ -112,7 +112,7 @@ static int placefig0(struct Figure *figset, int fignum, struct Position *posits,
 		
 		ymove(&xpos, &ypos,	&currfig, posits, npos);
 		if (checkpos(&currfig, &posits[npos], xpos, ypos, height, width, &placed)) {
-			*minang = angle;
+			posits[npos].angle = angle;
 		}
 				
 		destrfig(&currfig);
@@ -125,10 +125,10 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 {
 	int i, j, npos;
 	int *mask;
-	double minang, tmpheight;
+	double tmpheight;
 	double width, height, angstep;
 	struct Position *posits;
-	int (*placefig)(struct Figure *figset, int fignum, struct Position *posits, int npos, double *minang, double width, double height, double angstep);
+	static int (*placefig)(struct Figure *figset, int fignum, struct Position *posits, int npos, double width, double height, int angstep);
 	FILE *logfile;
 
 	logfile = attrs->logfile;
@@ -156,7 +156,7 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 		
 		fignum = indiv->genom[i];
 	
-		if (!placefig(figset, fignum, posits, npos, &minang, width, height, angstep)) {
+		if (!placefig(figset, fignum, posits, npos, width, height, angstep)) {
 			fprintf(logfile, "fail to position %d\n", fignum);
 			continue;
 		}
@@ -166,7 +166,7 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 		npos++;
 		
 		tmpheight = (tmpheight > posits[npos - 1].fig.corner.y + posits[npos - 1].y)? tmpheight : posits[npos - 1].fig.corner.y + posits[npos - 1].y;
-		fprintf(logfile, "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", fignum, npos, minang, tmpheight, posits[npos - 1].x, posits[npos - 1].y);
+		fprintf(logfile, "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", fignum, npos, posits[npos - 1].angle, tmpheight, posits[npos - 1].x, posits[npos - 1].y);
 	}
 
 	if (npos < indiv->gensize) {
@@ -181,7 +181,7 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 			continue;
 		}
 
-		if (!placefig(figset, i, posits, npos, &minang, width, height, angstep)) {
+		if (!placefig(figset, i, posits, npos, width, height, angstep)) {
 			for (j = i; j < setsize; j++) {
 				if (figset[i].id == figset[j].id) {
 					mask[j] = -1;
@@ -194,7 +194,7 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 		npos++;
 		
 		tmpheight = (tmpheight > posits[npos - 1].fig.corner.y + posits[npos - 1].y)? tmpheight : posits[npos - 1].fig.corner.y + posits[npos - 1].y;
-		fprintf(logfile, "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", i, npos, minang, tmpheight, posits[npos - 1].x, posits[npos - 1].y);	
+		fprintf(logfile, "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", i, npos, posits[npos - 1].angle, tmpheight, posits[npos - 1].x, posits[npos - 1].y);	
 		indiv->genom[npos - 1] = i;
 	}
 	

@@ -5,10 +5,11 @@
 #include "getpoly.h"
 #include "nest_structs.h"
 #include "cmnfuncs.h"
+#include "trigon.h"
 
 void gcenter(struct Figure *fig);
-void move_to_zero(struct Figure *fig);
-void rotate(struct Figure *fig, double angle);
+void move_to_zero(struct Figure *fig, struct Point *out);
+void rotate(struct Figure *fig, int angle);
 
 void gcenter(struct Figure *fig)
 {
@@ -29,7 +30,7 @@ void gcenter(struct Figure *fig)
 	fig->gcenter.y = ysum / (double)n;
 }
 
-void move_to_zero(struct Figure *fig)
+void move_to_zero(struct Figure *fig, struct Point *out)
 {
 	int i, j;
 	double xmin, ymin, xmax, ymax;
@@ -63,28 +64,37 @@ void move_to_zero(struct Figure *fig)
 	fig->corner.y = ymax - ymin;
 	fig->gcenter.x -= xmin;
 	fig->gcenter.y -= ymin;
+
+	if (out != NULL) {
+		out->x = (-1) * xmin;
+		out->y = (-1) * ymin;
+	}
 }
 
-void rotate(struct Figure *fig, double angle)
+void rotate(struct Figure *fig, int angle)
 {
 	int i, j;
-	double anglerads;
-	struct Point gravp; 
-	anglerads = angle * M_PI / 180;
+	struct Point gravp;
+	
+	if (angle < 0) {
+		angle = (-1) * (angle % 360) + 360;
+	} else {
+		angle %= 360;
+	}
 
 	gravp = fig->gcenter;
-	fig->gcenter.x = gravp.x * cos(anglerads) - gravp.y * sin(anglerads);
-	fig->gcenter.y = gravp.x * sin(anglerads) + gravp.y * cos(anglerads); 
+	fig->gcenter.x = gravp.x * cosinus[angle] - gravp.y * sinus[angle];
+	fig->gcenter.y = gravp.x * sinus[angle] + gravp.y * cosinus[angle]; 
 
 	for (i = 0; i < fig->nprims; i++) {  
 		for (j = 0; j < fig->prims[i].npts; j++) {
 			struct Point p;
 			p = fig->prims[i].pts[j];
-			fig->prims[i].pts[j].x = p.x * cos(anglerads) - p.y  * sin(anglerads);
-			fig->prims[i].pts[j].y = p.x * sin(anglerads) + p.y * cos(anglerads); 
+			fig->prims[i].pts[j].x = p.x * cosinus[angle] - p.y  * sinus[angle];
+			fig->prims[i].pts[j].y = p.x * sinus[angle] + p.y * cosinus[angle]; 
 		}
 	}
 
-	move_to_zero(fig);
+	move_to_zero(fig, &fig->t2);
 }
 

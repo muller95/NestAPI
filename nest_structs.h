@@ -19,6 +19,6 @@ struct Individ {
 struct NestAttrs {
 	int type;
 	double width, height;
-	double angstep;
+	int angstep;
 	FILE *logfile;
 };
