@@ -134,8 +134,8 @@ static int gencmp(const void *a, const void *b)
 
 int main(int argc, char **argv)
 {
-	int maxprims, maxfigs, maxpts, state, maxindivs;
-	int nfigs, nprims, npts, quant, setsize;
+	int maxprims, maxfigs, maxpts, state, maxindivs, namelen;
+	int nfigs, nprims, npts, setsize;
 	int ext;
 	double width = 800.0, height = 800.0;
 	struct Individ *indivs, tmp;
@@ -152,22 +152,24 @@ int main(int argc, char **argv)
 	n = 0;
 
 	maxfigs = 128;
+	namelen = 2048;
 	state = STATE_NEWFIG;
 	nfigs = nprims = npts = 0;
 	figs = (struct Figure*)xmalloc(sizeof(struct Figure) * maxfigs);
 
+	printf("reading\n");
 	while ((chread = getline(&str, &n, stdin)) != -1) {
 		double x, y;
 		trim(str);
 
 		if (state == STATE_NEWFIG) {
-			sscanf(str, "%d\n", &quant);
+			figs[nfigs].name = (char*)xmalloc(sizeof(char) * namelen);
+			sscanf(str, "%s %d %d\n", figs[nfigs].name, &figs[nfigs].quant, &figs[nfigs].angstep);
 			state = STATE_PRIM;
 			
 			maxpts = 2048;
 			maxprims = 128;
 
-			figs[nfigs].quant = quant;
 			figs[nfigs].prims = (struct Primitive*)xmalloc(sizeof(struct Primitive) * maxprims); 
 			figs[nfigs].prims[nprims].pts = (struct Point*)xmalloc(sizeof(struct Point) * maxpts);
 
@@ -233,12 +235,12 @@ int main(int argc, char **argv)
 		move_to_zero(&figs[i], &figs[i].t1);
 		gcenter(&figs[i]);
 	}
-
+	printf("done reading\n");
 	attrs.width = width;
 	attrs.height = height;
-	attrs.angstep = 45.0;
 	attrs.type = ROTNEST_DEFAULT;
-	attrs.logfile = fopen("./logfile", "w+");
+	attrs.logfile = stdout;
+	//attrs.logfile = fopen("./logfile", "w+");
 
 		
 	figset = makeset(figs, nfigs, &setsize);
@@ -254,7 +256,7 @@ int main(int argc, char **argv)
 	nindivs = 1;	
 	printf("\n");
 	ext = 0;
-	for (i = 0; i < 800 && !ext; i++) {
+	for (i = 0; i < 0 && !ext; i++) {
 		int nnew = 0, equal = 0, oldn;
 		
 		printf("nindivs=%d\n", nindivs);
@@ -356,7 +358,8 @@ int main(int argc, char **argv)
 	}
 
 	attrs.logfile = stdout;
-	rotnest(figset, setsize, &indivs[0], &attrs);
+	ppos2file(argv[1], indivs[0].posits, indivs[0].npos);
+//	rotnest(figset, setsize, &indivs[0], &attrs);
 	printf("\n\n");
 //	ppos2file(argv[1], indivs[0].posits, indivs[0].npos);
 	return 0;

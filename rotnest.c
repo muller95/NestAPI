@@ -14,13 +14,14 @@
 #define ROTNEST_FULL 	2
 
 
-static int placefig2(struct Figure *figset, int fignum, struct Position *posits, int npos, double width, double height, int angstep) 
+static int placefig2(struct Figure *figset, int fignum, struct Position *posits, int npos, double width, double height) 
 {
-	int placed = 0;
+	int placed = 0, angstep;
 	double angle;
 	double x, ypos, xpos;
 	struct Figure currfig;
 
+	angstep = figset[fignum].angstep == 0 ? 360 : figset[fignum].angstep;
 	for (angle = 0; angle < 360; angle += angstep) {
 		currfig = figdup(&figset[fignum]);
 		rotate(&currfig, angle);
@@ -43,15 +44,16 @@ static int placefig2(struct Figure *figset, int fignum, struct Position *posits,
 	return placed;
 }
 
-static int placefig1(struct Figure *figset, int fignum, struct Position *posits, int npos, double width, double height, int angstep) 
+static int placefig1(struct Figure *figset, int fignum, struct Position *posits, int npos, double width, double height) 
 {
-	int placed = 0, count, i;
+	int placed = 0, count, i, angstep;
 	double angle;
 	double x, ypos, *xpos;
 	struct Figure currfig;
 	
 	xpos = (double*)xcalloc((int)width, sizeof(double));	
 	
+	angstep = figset[fignum].angstep == 0 ? 360 : figset[fignum].angstep;
 	for (angle = 0; angle < 360; angle += angstep) {
 		ypos = height;
 		count = 0;
@@ -89,13 +91,14 @@ static int placefig1(struct Figure *figset, int fignum, struct Position *posits,
 
 }
  
-static int placefig0(struct Figure *figset, int fignum, struct Position *posits, int npos, double width, double height, int angstep) 
+static int placefig0(struct Figure *figset, int fignum, struct Position *posits, int npos, double width, double height) 
 {
-	int placed = 0;
+	int placed = 0, angstep;
 	double angle;
 	double x, ypos, xpos;
 	struct Figure currfig;
 	
+	angstep = figset[fignum].angstep == 0 ? 360 : figset[fignum].angstep;
 	for (angle = 0; angle < 360; angle += angstep) {
 		ypos = height;
 		xpos = 0.0;
@@ -126,15 +129,14 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 	int i, j, npos;
 	int *mask;
 	double tmpheight;
-	double width, height, angstep;
+	double width, height;
 	struct Position *posits;
-	static int (*placefig)(struct Figure *figset, int fignum, struct Position *posits, int npos, double width, double height, int angstep);
+	static int (*placefig)(struct Figure *figset, int fignum, struct Position *posits, int npos, double width, double height);
 	FILE *logfile;
 
 	logfile = attrs->logfile;
 	width = attrs->width;
 	height = attrs->height;
-	angstep = attrs->angstep;
 	
 	placefig = placefig0;
 	if (attrs->type == ROTNEST_MORE) {
@@ -156,7 +158,7 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 		
 		fignum = indiv->genom[i];
 	
-		if (!placefig(figset, fignum, posits, npos, width, height, angstep)) {
+		if (!placefig(figset, fignum, posits, npos, width, height)) {
 			fprintf(logfile, "fail to position %d\n", fignum);
 			continue;
 		}
@@ -181,7 +183,7 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 			continue;
 		}
 
-		if (!placefig(figset, i, posits, npos, width, height, angstep)) {
+		if (!placefig(figset, i, posits, npos, width, height)) {
 			for (j = i; j < setsize; j++) {
 				if (figset[i].id == figset[j].id) {
 					mask[j] = -1;

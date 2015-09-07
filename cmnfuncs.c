@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "figure.h"
 #include "nest_structs.h"
 
@@ -37,6 +38,7 @@ struct Figure figdup(struct Figure *src)
 	fig.id = src->id;
 	fig.nprims = src->nprims;
 	fig.quant = src->quant;
+	fig.angstep = src->angstep;
 
 	fig.corner.x = src->corner.x;
 	fig.corner.y = src->corner.y;
@@ -45,7 +47,9 @@ struct Figure figdup(struct Figure *src)
 	fig.gcenter.y = src->gcenter.y;
 
 	fig.t1 = src->t1;
-	fig.t2 = src->t2; 
+	fig.t2 = src->t2;
+	
+	fig.name = strdup(src->name); 
 
 
 	fig.prims = (struct Primitive*)xmalloc(sizeof(struct Primitive) * fig.nprims);

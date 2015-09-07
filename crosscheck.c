@@ -18,6 +18,7 @@ int crosscheck(struct Figure *currfig, struct Figure *posfig, struct Point offse
 {
 	double xl1, xr1, yt1, yb1;
 	double xl2, xr2, yt2, yb2;
+	double rxl, rxr, ryt, ryb;
 	int i, j, k, m;
 
 	xl1 = offset.x;
@@ -30,9 +31,17 @@ int crosscheck(struct Figure *currfig, struct Figure *posfig, struct Point offse
 	yb2 = posoffset.y;
 	yt2 = posfig->corner.y + posoffset.y;
 
-	if (xl1 >= xr2 || xr1 <= xl2 || yb1 >= yt2 || yt1 <= yb2)
+
+	if (xl1 >= xr2 || xr1 <= xl2 || yb1 >= yt2 || yt1 <= yb2) {
 		return 0;
-	
+	}
+
+	rxl = xl1 > xl2 ? xl1 : xl2; 
+	rxr = xr1 < xr2 ? xr1 : xr2;
+	ryb = yb1 > yb2 ? yb1 : yb2; 
+	ryt = yt1 < yt2 ? yt1 : yt2;
+
+		
 	for (i = 0; i < currfig->nprims; i++) { 		
 		for (j = 0; j < currfig->prims[i].npts - 1; j++) {
 			struct Point cp1, cp2;
@@ -48,6 +57,11 @@ int crosscheck(struct Figure *currfig, struct Figure *posfig, struct Point offse
 			xr1 = (cp1.x > cp2.x)? cp1.x : cp2.x;
 			yb1 = (cp1.y < cp2.y)? cp1.y : cp2.y;
 			yt1 = (cp1.y > cp2.y)? cp1.y : cp2.y;
+
+			if (xl1 >= rxr || xr1 <= rxl || yb1 >= ryt || yt1 <= ryb) {
+				continue;
+			}
+
 
 
 			for (k = 0; k < posfig->nprims; k++) {
@@ -67,15 +81,17 @@ int crosscheck(struct Figure *currfig, struct Figure *posfig, struct Point offse
 					yb2 = (pp1.y < pp2.y)? pp1.y : pp2.y;
 					yt2 = (pp1.y > pp2.y)? pp1.y : pp2.y;
 		
-					if (xl1 >= xr2 || xr1 <= xl2 || yb1 >= yt2 || yt1 <= yb2)
-			    	continue;
+					if (xl1 >= xr2 || xr1 <= xl2 || yb1 >= yt2 || yt1 <= yb2) {
+			    		continue;
+					}
             
-					if (!crosscheck_line(pp1, pp2, cp1, cp2))
+					if (!crosscheck_line(pp1, pp2, cp1, cp2)) {
 						continue;
-					else if (!crosscheck_line(cp1, cp2, pp1, pp2))
+					} else if (!crosscheck_line(cp1, cp2, pp1, pp2)) {
 						continue;
-					else 
+					} else {
 						return 1;
+					}
 				}
 			}
 		}
