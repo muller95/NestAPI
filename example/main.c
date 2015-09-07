@@ -137,7 +137,7 @@ int main(int argc, char **argv)
 	int maxprims, maxfigs, maxpts, state, maxindivs, namelen;
 	int nfigs, nprims, npts, setsize;
 	int ext;
-	double width = 800.0, height = 800.0;
+	double width = 1500.0, height = 1500.0;
 	struct Individ *indivs, tmp;
 	struct Figure *figs, *figset;
 	char *str;

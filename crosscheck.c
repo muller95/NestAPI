@@ -58,7 +58,7 @@ int crosscheck(struct Figure *currfig, struct Figure *posfig, struct Point offse
 			yb1 = (cp1.y < cp2.y)? cp1.y : cp2.y;
 			yt1 = (cp1.y > cp2.y)? cp1.y : cp2.y;
 
-			if (xl1 >= rxr || xr1 <= rxl || yb1 >= ryt || yt1 <= ryb) {
+			if (xl1 > rxr || xr1 < rxl || yb1 > ryt || yt1 < ryb) {
 				continue;
 			}
 
@@ -81,7 +81,7 @@ int crosscheck(struct Figure *currfig, struct Figure *posfig, struct Point offse
 					yb2 = (pp1.y < pp2.y)? pp1.y : pp2.y;
 					yt2 = (pp1.y > pp2.y)? pp1.y : pp2.y;
 		
-					if (xl1 >= xr2 || xr1 <= xl2 || yb1 >= yt2 || yt1 <= yb2) {
+					if (xl1 > xr2 || xr1 < xl2 || yb1 > yt2 || yt1 < yb2) {
 			    		continue;
 					}
             
