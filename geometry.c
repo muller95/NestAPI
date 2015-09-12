@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 #include "figure.h"
 #include "getpoly.h"
 #include "nest_structs.h"
@@ -8,7 +9,7 @@
 #include "trigon.h"
 
 void gcenter(struct Figure *fig);
-void move_to_zero(struct Figure *fig, struct Point *out);
+void move_to_zero(struct Figure *fig);
 void rotate(struct Figure *fig, int angle);
 
 void gcenter(struct Figure *fig)
@@ -30,10 +31,13 @@ void gcenter(struct Figure *fig)
 	fig->gcenter.y = ysum / (double)n;
 }
 
-void move_to_zero(struct Figure *fig, struct Point *out)
+void move_to_zero(struct Figure *fig)
 {
 	int i, j;
 	double xmin, ymin, xmax, ymax;
+	char trans[512];
+
+	memset(trans, 0, sizeof(trans));
 
 	xmin = xmax = fig->prims[0].pts[0].x;
 	ymin = ymax = fig->prims[0].pts[0].y;
@@ -64,17 +68,17 @@ void move_to_zero(struct Figure *fig, struct Point *out)
 	fig->corner.y = ymax - ymin;
 	fig->gcenter.x -= xmin;
 	fig->gcenter.y -= ymin;
-
-	if (out != NULL) {
-		out->x = (-1) * xmin;
-		out->y = (-1) * ymin;
-	}
+	sprintf(trans, " translate(%lf,%lf)", (-1) * xmin, (-1) * ymin);
+	strcat(fig->trfrms, trans);
 }
 
 void rotate(struct Figure *fig, int angle)
 {
 	int i, j;
 	struct Point gravp;
+	char rot[512];
+
+	memset(rot, 0, sizeof(rot));
 	
 	if (angle < 0) {
 		angle = (-1) * (angle % 360) + 360;
@@ -94,7 +98,9 @@ void rotate(struct Figure *fig, int angle)
 			fig->prims[i].pts[j].y = p.x * sinus[angle] + p.y * cosinus[angle]; 
 		}
 	}
-
-	move_to_zero(fig, &fig->t2);
+	
+	sprintf(rot, " rotate(%d)", angle);
+	strcat(fig->trfrms, rot);
+	move_to_zero(fig);
 }
 

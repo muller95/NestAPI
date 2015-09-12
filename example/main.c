@@ -145,8 +145,6 @@ int main(int argc, char **argv)
 	size_t n;
 	int i, j, k, m, nindivs;
 	struct NestAttrs attrs;
-
-	printf("%s\n", argv[1]);
 	
 	str = NULL;
 	n = 0;
@@ -164,6 +162,7 @@ int main(int argc, char **argv)
 
 		if (state == STATE_NEWFIG) {
 			figs[nfigs].name = (char*)xmalloc(sizeof(char) * namelen);
+			memset(figs[nfigs].trfrms, 0, sizeof(figs[nfigs].trfrms));
 			sscanf(str, "%s %d %d\n", figs[nfigs].name, &figs[nfigs].quant, &figs[nfigs].angstep);
 			state = STATE_PRIM;
 			
@@ -173,7 +172,7 @@ int main(int argc, char **argv)
 			figs[nfigs].prims = (struct Primitive*)xmalloc(sizeof(struct Primitive) * maxprims); 
 			figs[nfigs].prims[nprims].pts = (struct Point*)xmalloc(sizeof(struct Point) * maxpts);
 
-			free(str);
+	//		free(str);
 			str = NULL;
 			continue;
 		}
@@ -194,7 +193,7 @@ int main(int argc, char **argv)
 			nprims = 0;
 			npts = 0;
 
-			free(str);
+	//		free(str);
 			str = NULL;
 			continue;
 		}
@@ -211,7 +210,7 @@ int main(int argc, char **argv)
 			figs[nfigs].prims[nprims].pts = (struct Point*)xmalloc(sizeof(struct Point) * maxpts);
 			npts = 0;
 
-			free(str);
+	//		free(str);
 			str = NULL;
 			continue;
 		}
@@ -227,20 +226,20 @@ int main(int argc, char **argv)
 			figs[nfigs].prims[nprims].pts = (struct Point*)xrealloc(figs[nfigs].prims[nprims].pts, sizeof(struct Point) * maxpts);
 		}
 
-		free(str);
+	//	free(str);
 		str = NULL;
 	}
 
 	for (i = 0; i < nfigs; i++) {
-		move_to_zero(&figs[i], &figs[i].t1);
+		move_to_zero(&figs[i]);
 		gcenter(&figs[i]);
 	}
 	printf("done reading\n");
 	attrs.width = width;
 	attrs.height = height;
 	attrs.type = ROTNEST_DEFAULT;
-	attrs.logfile = stdout;
-	//attrs.logfile = fopen("./logfile", "w+");
+	//attrs.logfile = stdout;
+	attrs.logfile = fopen("./logfile", "w+");
 
 		
 	figset = makeset(figs, nfigs, &setsize);
@@ -256,7 +255,7 @@ int main(int argc, char **argv)
 	nindivs = 1;	
 	printf("\n");
 	ext = 0;
-	for (i = 0; i < 0 && !ext; i++) {
+	for (i = 0; i < 10 && !ext; i++) {
 		int nnew = 0, equal = 0, oldn;
 		
 		printf("nindivs=%d\n", nindivs);
@@ -355,6 +354,12 @@ int main(int argc, char **argv)
 			printf("%d ", indivs[j].genom[k]);
 		}
 		printf("\n");
+	}
+
+	printf("\n");
+	for (i = 0; i < indivs[0].npos; i++) {
+		printf("%s\n", indivs[0].posits[i].fig.name);
+		printf("%s\n:\n", indivs[0].posits[i].fig.trfrms);
 	}
 
 	attrs.logfile = stdout;

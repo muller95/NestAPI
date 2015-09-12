@@ -35,6 +35,8 @@ struct Figure figdup(struct Figure *src)
 	int i, j;
 	struct Figure fig;
 
+	memset(fig.trfrms, 0, sizeof(fig.trfrms));
+
 	fig.id = src->id;
 	fig.nprims = src->nprims;
 	fig.quant = src->quant;
@@ -46,11 +48,9 @@ struct Figure figdup(struct Figure *src)
 	fig.gcenter.x = src->gcenter.x;
 	fig.gcenter.y = src->gcenter.y;
 
-	fig.t1 = src->t1;
-	fig.t2 = src->t2;
-	
 	fig.name = strdup(src->name); 
 
+	strcpy(fig.trfrms, src->trfrms);
 
 	fig.prims = (struct Primitive*)xmalloc(sizeof(struct Primitive) * fig.nprims);
 
