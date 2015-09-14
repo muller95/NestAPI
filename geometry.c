@@ -99,7 +99,7 @@ void rotate(struct Figure *fig, int angle)
 		}
 	}
 	
-	sprintf(rot, " rotate(%d)", angle);
+	sprintf(rot, " rotate(%d, 0, 0)", angle);
 	strcat(fig->trfrms, rot);
 	move_to_zero(fig);
 }

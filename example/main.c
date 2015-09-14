@@ -135,9 +135,8 @@ static int gencmp(const void *a, const void *b)
 int main(int argc, char **argv)
 {
 	int maxprims, maxfigs, maxpts, state, maxindivs, namelen;
-	int nfigs, nprims, npts, setsize;
+	int nfigs, nprims, npts, setsize, iters;
 	int ext;
-	double width = 1500.0, height = 1500.0;
 	struct Individ *indivs, tmp;
 	struct Figure *figs, *figset;
 	char *str;
@@ -155,7 +154,6 @@ int main(int argc, char **argv)
 	nfigs = nprims = npts = 0;
 	figs = (struct Figure*)xmalloc(sizeof(struct Figure) * maxfigs);
 
-	printf("reading\n");
 	while ((chread = getline(&str, &n, stdin)) != -1) {
 		double x, y;
 		trim(str);
@@ -234,11 +232,9 @@ int main(int argc, char **argv)
 		move_to_zero(&figs[i]);
 		gcenter(&figs[i]);
 	}
-	printf("done reading\n");
-	attrs.width = width;
-	attrs.height = height;
+	attrs.width = atof(argv[1]);
+	attrs.height = atof(argv[2]);
 	attrs.type = ROTNEST_DEFAULT;
-	//attrs.logfile = stdout;
 	attrs.logfile = fopen("./logfile", "w+");
 
 		
@@ -253,9 +249,9 @@ int main(int argc, char **argv)
 	rotnest(figset, setsize, &indivs[0], &attrs);
 			
 	nindivs = 1;	
-	printf("\n");
 	ext = 0;
-	for (i = 0; i < 10 && !ext; i++) {
+	iters = atoi(argv[3]);
+	for (i = 0; i < iters && !ext; i++) {
 		int nnew = 0, equal = 0, oldn;
 		
 		printf("nindivs=%d\n", nindivs);
@@ -344,9 +340,8 @@ int main(int argc, char **argv)
 		qsort(indivs, nindivs, sizeof(struct Individ), gencmp);
 	}
 	
-//	qsort(indivs, nindivs, sizeof(struct Individ), gencmp);
 
-	printf("nindivs=%d\n", nindivs);
+/*	printf("nindivs=%d\n", nindivs);
 	printf("LAST NEST MIN_HEIGHT=%lf GENSIZE=%d\n", indivs[0].height, indivs[0].gensize);
 	for (j = 0; j < 1; j++) {
 		printf("ind=%d height=%lf gensize=%d genom: ", i, indivs[j].height, indivs[j].gensize);
@@ -354,18 +349,12 @@ int main(int argc, char **argv)
 			printf("%d ", indivs[j].genom[k]);
 		}
 		printf("\n");
-	}
+	}*/
 
-	printf("\n");
 	for (i = 0; i < indivs[0].npos; i++) {
 		printf("%s\n", indivs[0].posits[i].fig.name);
 		printf("%s\n:\n", indivs[0].posits[i].fig.trfrms);
 	}
 
-	attrs.logfile = stdout;
-	ppos2file(argv[1], indivs[0].posits, indivs[0].npos);
-//	rotnest(figset, setsize, &indivs[0], &attrs);
-	printf("\n\n");
-//	ppos2file(argv[1], indivs[0].posits, indivs[0].npos);
 	return 0;
 }

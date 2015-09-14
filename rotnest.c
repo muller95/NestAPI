@@ -133,6 +133,9 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 	struct Position *posits;
 	static int (*placefig)(struct Figure *figset, int fignum, struct Position *posits, int npos, double width, double height);
 	FILE *logfile;
+	char trans[512];
+
+	memset(trans, 0, sizeof(trans));
 
 	logfile = attrs->logfile;
 	width = attrs->width;
@@ -163,7 +166,10 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 			continue;
 		}
 
-
+		sprintf(trans, " translate(%lf,%lf)", posits[npos].x, posits[npos].y);
+		strcat(posits[npos].fig.trfrms, trans);
+		memset(trans, 0, sizeof(trans));
+		
 		mask[fignum] = 1;
 		npos++;
 		
@@ -191,6 +197,10 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 			}
 			continue;
 		}
+		
+		sprintf(trans, " translate(%lf,%lf)", posits[npos].x, posits[npos].y);
+		strcat(posits[npos].fig.trfrms, trans);
+		memset(trans, 0, sizeof(trans));
 
 		mask[i] = 1;
 		npos++;
