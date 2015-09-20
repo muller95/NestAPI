@@ -35,14 +35,11 @@ void move_to_zero(struct Figure *fig)
 {
 	int i, j;
 	double xmin, ymin, xmax, ymax;
-	char trans[512];
-
-	memset(trans, 0, sizeof(trans));
+	double mtx[3][3];
 
 	xmin = xmax = fig->prims[0].pts[0].x;
 	ymin = ymax = fig->prims[0].pts[0].y;
 
-	
 	for (i = 0; i < fig->nprims; i++) {
 		for (j = 0; j < fig->prims[i].npts; j++) {
 			struct Point pt;
@@ -68,18 +65,24 @@ void move_to_zero(struct Figure *fig)
 	fig->corner.y = ymax - ymin;
 	fig->gcenter.x -= xmin;
 	fig->gcenter.y -= ymin;
-	sprintf(trans, " translate(%lf,%lf)", (-1) * xmin, (-1) * ymin);
-	strcat(fig->trfrms, trans);
+
+
+	for (i = 0; i < 3; i++) {
+		for (j = 0; j < 3; j++) {
+			mtx[i][j] = (i == j)? 1.0 : 0.0;
+		}
+	}
+	mtx[0][2] = (-1) * xmin;
+	mtx[1][2] = (-1) * ymin;
+	mtxmult(mtx, fig);
 }
 
 void rotate(struct Figure *fig, int angle)
 {
 	int i, j;
 	struct Point gravp;
-	char rot[512];
+	double mtx[3][3];
 
-	memset(rot, 0, sizeof(rot));
-	
 	if (angle < 0) {
 		angle = (-1) * (angle % 360) + 360;
 	} else {
@@ -87,20 +90,30 @@ void rotate(struct Figure *fig, int angle)
 	}
 
 	gravp = fig->gcenter;
-	fig->gcenter.x = gravp.x * cosinus[angle] - gravp.y * sinus[angle];
-	fig->gcenter.y = gravp.x * sinus[angle] + gravp.y * cosinus[angle]; 
+	fig->gcenter.x = gravp.x * cosine[angle] - gravp.y * sine[angle];
+	fig->gcenter.y = gravp.x * sine[angle] + gravp.y * cosine[angle]; 
 
 	for (i = 0; i < fig->nprims; i++) {  
 		for (j = 0; j < fig->prims[i].npts; j++) {
 			struct Point p;
 			p = fig->prims[i].pts[j];
-			fig->prims[i].pts[j].x = p.x * cosinus[angle] - p.y  * sinus[angle];
-			fig->prims[i].pts[j].y = p.x * sinus[angle] + p.y * cosinus[angle]; 
+			fig->prims[i].pts[j].x = p.x * cosine[angle] - p.y  * sine[angle];
+			fig->prims[i].pts[j].y = p.x * sine[angle] + p.y * cosine[angle]; 
+		}
+	}
+
+	for (i = 0; i < 3; i++) {
+		for (j = 0; j < 3; j++) {
+			mtx[i][j] = (i == j)? 1.0 : 0.0;
 		}
 	}
 	
-	sprintf(rot, " rotate(%d, 0, 0)", angle);
-	strcat(fig->trfrms, rot);
+	mtx[0][0] = cosine[angle];
+	mtx[0][1] = (-1) * sine[angle];
+	mtx[1][0] = sine[angle];
+	mtx[1][1] = cosine[angle];
+	mtxmult(mtx, fig);
+
 	move_to_zero(fig);
 }
 

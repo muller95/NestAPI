@@ -160,7 +160,6 @@ int main(int argc, char **argv)
 
 		if (state == STATE_NEWFIG) {
 			figs[nfigs].name = (char*)xmalloc(sizeof(char) * namelen);
-			memset(figs[nfigs].trfrms, 0, sizeof(figs[nfigs].trfrms));
 			sscanf(str, "%s %d %d\n", figs[nfigs].name, &figs[nfigs].quant, &figs[nfigs].angstep);
 			state = STATE_PRIM;
 			
@@ -229,9 +228,10 @@ int main(int argc, char **argv)
 	}
 
 	for (i = 0; i < nfigs; i++) {
-		move_to_zero(&figs[i]);
-		gcenter(&figs[i]);
+		figinit(&figs[i]);
 	}
+
+
 	attrs.width = atof(argv[1]);
 	attrs.height = atof(argv[2]);
 	attrs.type = ROTNEST_DEFAULT;
@@ -341,20 +341,21 @@ int main(int argc, char **argv)
 	}
 	
 
-/*	printf("nindivs=%d\n", nindivs);
-	printf("LAST NEST MIN_HEIGHT=%lf GENSIZE=%d\n", indivs[0].height, indivs[0].gensize);
-	for (j = 0; j < 1; j++) {
-		printf("ind=%d height=%lf gensize=%d genom: ", i, indivs[j].height, indivs[j].gensize);
-		for (k = 0; k < indivs[j].gensize; k++) { 
-			printf("%d ", indivs[j].genom[k]);
-		}
-		printf("\n");
-	}*/
 
 	for (i = 0; i < indivs[0].npos; i++) {
+		double a, b, c, d, e, f;
+		a = indivs[0].posits[i].fig.mtx[0][0];
+		b = indivs[0].posits[i].fig.mtx[1][0];
+		c = indivs[0].posits[i].fig.mtx[0][1];
+		d = indivs[0].posits[i].fig.mtx[1][1];
+		e = indivs[0].posits[i].fig.mtx[0][2];
+		f = indivs[0].posits[i].fig.mtx[1][2];
+
 		printf("%s\n", indivs[0].posits[i].fig.name);
-		printf("%s\n:\n", indivs[0].posits[i].fig.trfrms);
+		printf("matrix(%lf, %lf, %lf, %lf, %lf, %lf)\n:\n", a, b, c, d, e, f);
 	}
 
+//	ppos2file("./drawposits", indivs[0].posits, indivs[0].npos);
+	
 	return 0;
 }

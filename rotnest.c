@@ -126,16 +126,14 @@ static int placefig0(struct Figure *figset, int fignum, struct Position *posits,
 
 void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct NestAttrs *attrs)
 {
-	int i, j, npos;
+	int i, j, k, npos;
 	int *mask;
 	double tmpheight;
 	double width, height;
 	struct Position *posits;
 	static int (*placefig)(struct Figure *figset, int fignum, struct Position *posits, int npos, double width, double height);
 	FILE *logfile;
-	char trans[512];
-
-	memset(trans, 0, sizeof(trans));
+	double mtx[3][3];
 
 	logfile = attrs->logfile;
 	width = attrs->width;
@@ -166,10 +164,15 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 			continue;
 		}
 
-		sprintf(trans, " translate(%lf,%lf)", posits[npos].x, posits[npos].y);
-		strcat(posits[npos].fig.trfrms, trans);
-		memset(trans, 0, sizeof(trans));
-		
+		for (j = 0; j < 3; j++) {
+			for (k = 0; k < 3; k++) {
+				mtx[j][k] = (j == k)? 1.0 : 0.0;
+			}
+		}
+		mtx[0][2] = posits[npos].x;
+		mtx[1][2] = posits[npos].y;
+		mtxmult(mtx, &posits[npos].fig);
+
 		mask[fignum] = 1;
 		npos++;
 		
@@ -197,10 +200,15 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 			}
 			continue;
 		}
-		
-		sprintf(trans, " translate(%lf,%lf)", posits[npos].x, posits[npos].y);
-		strcat(posits[npos].fig.trfrms, trans);
-		memset(trans, 0, sizeof(trans));
+
+		for (j = 0; j < 3; j++) {
+			for (k = 0; k < 3; k++) {
+				mtx[j][k] = (j == k)? 1.0 : 0.0;
+			}
+		}
+		mtx[0][2] = posits[npos].x;
+		mtx[1][2] = posits[npos].y;
+		mtxmult(mtx, &posits[npos].fig);
 
 		mask[i] = 1;
 		npos++;

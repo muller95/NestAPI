@@ -5,6 +5,5 @@ void *xrealloc(void *ptr, size_t size);
 void *xcalloc(size_t nmemb, size_t size);
 void destrfig(struct Figure *fig);
 void destrindiv(struct Individ *indiv);
-
-
-
+void figinit(struct Figure *fig);
+void mtxmult(double mtx[3][3], struct Figure *fig);

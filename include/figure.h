@@ -9,7 +9,8 @@ struct Primitive {
 
 struct Figure {
 	int id;
-	char *name, trfrms[1024];
+	double mtx[3][3];
+	char *name;
 	int nprims, quant, angstep;
 	struct Primitive *prims;
 	struct Point gcenter, corner;
