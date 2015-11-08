@@ -164,7 +164,7 @@ int main(int argc, char **argv)
 {
 	int maxprims, maxfigs, maxpts, state, maxindivs, namelen;
 	int nfigs, nprims, npts, /*setsize,*/ iters;
-	int ext;
+	int ext, nested, need;
 	//struct Individ *indivs, tmp;
 	//struct Individ heirs[INDIVS_PER_ITER + 1];
 	struct Figure *figs/*, figset*/;
@@ -259,159 +259,186 @@ int main(int argc, char **argv)
 
 		
 	figset = makeset(figs, nfigs, &setsize);
-	//printf("makeset done\n");
-	qsort(figset, setsize, sizeof(struct Figure), figcmp);
-
-	maxindivs = 1024;
-	indivs = (struct Individ*)xmalloc(sizeof(struct Individ) * maxindivs);
-	//printf("inidivs alloced\n");
-	indivs[0].genom = (int*)xmalloc(sizeof(int) * setsize);
-	indivs[0].gensize = 0;
-
-	fprintf(stderr, "start first nest\n");
-	fflush(stderr);
-	rotnest(figset, setsize, &indivs[0], &attrs);
-			
-	nindivs = 1;	
-	ext = 0;
-	iters = atoi(argv[3]);
-	for (i = 0; i < iters && !ext; i++) {
-		int nnew = 0, equal = 0, oldn;
-		
-		fprintf(stderr, "nindivs=%d\n", nindivs);
-		for (j = 0; j < 1; j++) {
-			fprintf(stderr, "ind=%d height=%lf gensize=%d genom: ", i, indivs[j].height, indivs[j].gensize);
-			for (k = 0; k < indivs[j].gensize; k++) { 
-				fprintf(stderr, "%d ", indivs[j].genom[k]);
-			}
-			fprintf(stderr, "\n");
-		}
-
-		fprintf(stderr, "\n");
-		fflush(stderr);
-
-		oldn = nindivs;
-		for (j = 0; j < oldn - 1 && nnew < INDIVS_PER_ITER; j++) {
-			struct Individ tmp[2];
-			if (indivs[j].gensize == indivs[j + 1].gensize) {
-				int res;
-				res = crossover(&indivs[j], &indivs[j + 1], &tmp[0], setsize);
-				crossover(&indivs[j + 1], &indivs[j], &tmp[1], setsize);
+	need = setsize;
+	nested  = 0;
 	
-				if (res < 0) {
+	while (nested < need) {
+	
+		qsort(figset, setsize, sizeof(struct Figure), figcmp);
+
+		maxindivs = 1024;
+		indivs = (struct Individ*)xmalloc(sizeof(struct Individ) * maxindivs);
+		//printf("inidivs alloced\n");
+		indivs[0].genom = (int*)xmalloc(sizeof(int) * setsize);
+		indivs[0].gensize = 0;
+
+		fprintf(stderr, "start first nest\n");
+		fflush(stderr);
+		rotnest(figset, setsize, &indivs[0], &attrs);
+						
+		nindivs = 1;		
+		ext = 0;
+		iters = atoi(argv[3]);
+		for (i = 0; i < iters && !ext; i++) {
+				int nnew = 0, equal = 0, oldn;
+				
+				fprintf(stderr, "nindivs=%d\n", nindivs);
+				for (j = 0; j < 1; j++) {
+						fprintf(stderr, "ind=%d height=%lf gensize=%d genom: ", i, indivs[j].height, indivs[j].gensize);
+						for (k = 0; k < indivs[j].gensize; k++) { 
+								fprintf(stderr, "%d ", indivs[j].genom[k]);
+						}
+						fprintf(stderr, "\n");
+				}
+
+				fprintf(stderr, "\n");
+				fflush(stderr);
+
+				oldn = nindivs;
+				for (j = 0; j < oldn - 1 && nnew < INDIVS_PER_ITER; j++) {
+						struct Individ tmp[2];
+						if (indivs[j].gensize == indivs[j + 1].gensize) {
+								int res;
+								res = crossover(&indivs[j], &indivs[j + 1], &tmp[0], setsize);
+								crossover(&indivs[j + 1], &indivs[j], &tmp[1], setsize);
+		
+								if (res < 0) {
+										break;
+								}
+						}
+						else {
+								break;
+						}
+
+						for (k = 0; k < 2; k++) {
+								for (m = 0; m < nindivs; m++) {
+										equal = gensequal(&tmp[k], &indivs[m]) || gensequal2(&tmp[k], &indivs[m], figset);
+										if (equal) {
+												break;
+										}
+								}
+						
+
+								if (!equal) {
+										struct ThreadData *data;
+										data = (struct ThreadData*)xmalloc(sizeof(struct ThreadData));
+										data->heirnum = nnew;
+										heirs[nnew] = tmp[k];
+										fprintf(stderr, "k=%d data->heirnum=%d\n", k, data->heirnum);
+
+										if (pthread_create(&thrds[nnew], NULL, thrdfunc, data) != 0) {
+												perror("Error creating thread\n");
+												exit(1);
+										}
+
+										nnew++;
+						//				rotnest(figset, setsize, &heirs[k], &attrs);
+								/*		indivs[nindivs] = heirs[k];
+										nindivs++;
+
+										if (nindivs == maxindivs) {
+												maxindivs *= 2;
+												indivs = (struct Individ*)xrealloc(indivs, sizeof(struct Individ) * maxindivs);
+										}*/
+								} else {
+										destrindiv(&tmp[k]);
+								}
+						}
+				}
+				
+				
+				equal = 0;
+				while (nnew == 0) {
+						int res;
+						res = mutate(&indivs[0], &heirs[0], setsize);
+						if (res < 0) {
+								ext = 1;
+								break;
+						}
+						equal = 0;
+						for (j = 0; j < nindivs; j++) {
+								equal = gensequal(&heirs[0], &indivs[j]) || gensequal2(&heirs[0], &indivs[j], figset);
+								if (equal) {
+										break;
+								}
+						}
+						if (!equal) {
+								struct ThreadData *data;
+								data = (struct ThreadData*)xmalloc(sizeof(struct ThreadData));
+								data->heirnum = 0;
+								if (pthread_create(&thrds[nnew], NULL, thrdfunc, data) != 0) {
+										perror("Error creating thread\n");
+										exit(1);
+								}
+								nnew++;
+				//				rotnest(figset, setsize, &heirs[0], &attrs);
+						/*		indivs[nindivs] = heirs[0];
+								nindivs++;
+
+								if (nindivs == maxindivs) {
+										maxindivs *= 2;
+										indivs = (struct Individ*)xrealloc(indivs, sizeof(struct Individ) * maxindivs);
+								}*/
+						} else {
+								destrindiv(&heirs[0]);
+						}
+				}
+
+				fprintf(stderr, "\nnnew=%d\n", nnew);
+				fflush(stderr); 
+				for (j = 0; j < nnew; j++) {
+						pthread_join(thrds[j], NULL);
+						fprintf(stderr, "%d done\n", j);
+						fflush(stderr);
+						indivs[nindivs] = heirs[j];
+						nindivs++;
+
+						if (nindivs == maxindivs) {
+								maxindivs *= 2;
+								indivs = (struct Individ*)xrealloc(indivs, sizeof(struct Individ) * maxindivs);
+						}
+				}
+				fprintf(stderr, "\n");
+				fflush(stderr);
+				qsort(indivs, nindivs, sizeof(struct Individ), gencmp);
+		}
+		
+
+
+		for (i = 0; i < indivs[0].npos; i++) {
+				double a, b, c, d, e, f;
+				a = indivs[0].posits[i].fig.mtx[0][0];
+				b = indivs[0].posits[i].fig.mtx[1][0];
+				c = indivs[0].posits[i].fig.mtx[0][1];
+				d = indivs[0].posits[i].fig.mtx[1][1];
+				e = indivs[0].posits[i].fig.mtx[0][2];
+				f = indivs[0].posits[i].fig.mtx[1][2];
+
+				printf("%s\n", indivs[0].posits[i].fig.name);
+				printf("matrix(%lf, %lf, %lf, %lf, %lf, %lf)\n:\n", a, b, c, d, e, f);
+		}
+		printf("-\n");
+		
+		for (i = 0, j = 0; i < setsize; i++) {
+			int found = 0;
+			for (k = 0; k < indivs[0].gensize; k++) {
+				if (i == indivs[0].genom[k]) {
+					found = 1;
 					break;
 				}
 			}
-			else {
-				break;
-			}
-
-			for (k = 0; k < 2; k++) {
-				for (m = 0; m < nindivs; m++) {
-					equal = gensequal(&tmp[k], &indivs[m]) || gensequal2(&tmp[k], &indivs[m], figset);
-					if (equal) {
-						break;
-					}
-				}
 			
-
-				if (!equal) {
-					struct ThreadData *data;
-					data = (struct ThreadData*)xmalloc(sizeof(struct ThreadData));
-					data->heirnum = nnew;
-					heirs[nnew] = tmp[k];
-					fprintf(stderr, "k=%d data->heirnum=%d\n", k, data->heirnum);
-
-					if (pthread_create(&thrds[nnew], NULL, thrdfunc, data) != 0) {
-						perror("Error creating thread\n");
-						exit(1);
-					}
-
-					nnew++;
-			//		rotnest(figset, setsize, &heirs[k], &attrs);
-				/*	indivs[nindivs] = heirs[k];
-					nindivs++;
-
-					if (nindivs == maxindivs) {
-						maxindivs *= 2;
-						indivs = (struct Individ*)xrealloc(indivs, sizeof(struct Individ) * maxindivs);
-					}*/
-				} else {
-					destrindiv(&tmp[k]);
-				}
+				if (!found && i != j) {
+				destrfig(&figset[j]);
+				figset[j] = figset[i];
+				j++;		
+			} else if (!found) {
+				j++;
 			}
 		}
 		
-		
-		equal = 0;
-		while (nnew == 0) {
-			int res;
-			res = mutate(&indivs[0], &heirs[0], setsize);
-			if (res < 0) {
-				ext = 1;
-				break;
-			}
-			equal = 0;
-			for (j = 0; j < nindivs; j++) {
-				equal = gensequal(&heirs[0], &indivs[j]) || gensequal2(&heirs[0], &indivs[j], figset);
-				if (equal) {
-					break;
-				}
-			}
-			if (!equal) {
-				struct ThreadData *data;
-				data = (struct ThreadData*)xmalloc(sizeof(struct ThreadData));
-				data->heirnum = 0;
-				if (pthread_create(&thrds[nnew], NULL, thrdfunc, data) != 0) {
-					perror("Error creating thread\n");
-					exit(1);
-				}
-				nnew++;
-		//		rotnest(figset, setsize, &heirs[0], &attrs);
-			/*	indivs[nindivs] = heirs[0];
-				nindivs++;
-
-				if (nindivs == maxindivs) {
-					maxindivs *= 2;
-					indivs = (struct Individ*)xrealloc(indivs, sizeof(struct Individ) * maxindivs);
-				}*/
-			} else {
-				destrindiv(&heirs[0]);
-			}
-		}
-
-		fprintf(stderr, "\nnnew=%d\n", nnew);
-		fflush(stderr); 
-		for (j = 0; j < nnew; j++) {
-			pthread_join(thrds[j], NULL);
-			fprintf(stderr, "%d done\n", j);
-			fflush(stderr);
-			indivs[nindivs] = heirs[j];
-			nindivs++;
-
-			if (nindivs == maxindivs) {
-				maxindivs *= 2;
-				indivs = (struct Individ*)xrealloc(indivs, sizeof(struct Individ) * maxindivs);
-			}
-		}
-		fprintf(stderr, "\n");
-		fflush(stderr);
-		qsort(indivs, nindivs, sizeof(struct Individ), gencmp);
-	}
-	
-
-
-	for (i = 0; i < indivs[0].npos; i++) {
-		double a, b, c, d, e, f;
-		a = indivs[0].posits[i].fig.mtx[0][0];
-		b = indivs[0].posits[i].fig.mtx[1][0];
-		c = indivs[0].posits[i].fig.mtx[0][1];
-		d = indivs[0].posits[i].fig.mtx[1][1];
-		e = indivs[0].posits[i].fig.mtx[0][2];
-		f = indivs[0].posits[i].fig.mtx[1][2];
-
-		printf("%s\n", indivs[0].posits[i].fig.name);
-		printf("matrix(%lf, %lf, %lf, %lf, %lf, %lf)\n:\n", a, b, c, d, e, f);
+		nested += indivs[0].gensize;
+		setsize = need - nested;
 	}
 	fflush(stdout);
 
