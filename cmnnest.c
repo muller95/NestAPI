@@ -131,7 +131,7 @@ int mutate(struct Individ *src, struct Individ *mutant, int setsize)
 	return SUCCESSFUL;
 }
 
-int checkpos(struct Figure *currfig, struct Position *lastpos, double xpos, double ypos, double height, double width, int *placed)
+int checkpos_height(struct Figure *currfig, struct Position *lastpos, double xpos, double ypos, double height, double width, int *placed)
 {
 	int res = 0;
 	double hcurr, wcurr;
@@ -173,6 +173,54 @@ int checkpos(struct Figure *currfig, struct Position *lastpos, double xpos, doub
 	return res;
 }
 
+int checkpos_radius(struct Figure *currfig, struct Position *lastpos, double xpos, double ypos, double height, double width, int *placed)
+{
+	int res = 0;
+	double hcurr, wcurr;
+
+	hcurr = currfig->corner.y + ypos;
+	wcurr = xpos + currfig->corner.x;
+
+	if (hcurr >= height ||  wcurr >= width)				
+		return 0;
+
+
+
+	if (*placed == 0) {
+		*placed = 1;
+		res = 1;
+		lastpos->fig = figdup(currfig);
+		lastpos->x = xpos;
+		lastpos->y = ypos;
+	} else if (*placed == 1) {
+		double hprev, rcurr, rprev, gy, gx, gyprev, gxprev;
+		int checkeq;
+
+		hprev = lastpos->y + lastpos->fig.corner.y;
+
+		gy = currfig->gcenter.y + ypos;
+		gyprev = lastpos->fig.gcenter.y + lastpos->y;
+		gx = currfig->gcenter.x + xpos;
+		gxprev = lastpos->fig.gcenter.x + lastpos->x;
+
+		rcurr = sqrt(gx * gx + gy * gy);
+		rprev = sqrt(gxprev * gxprev + gyprev * gyprev);
+	
+		checkeq = rcurr < rprev || (fabs(rcurr - rprev) < DBL_EPSILON && hcurr < hprev) 
+					|| (fabs(rcurr - rprev) < DBL_EPSILON && fabs(hcurr - hprev) < DBL_EPSILON && gy < gyprev);
+	
+		if (checkeq) {
+			res = 1;
+			destrfig(&(lastpos->fig));
+			lastpos->fig = figdup(currfig);
+			lastpos->x = xpos;
+			lastpos->y = ypos;
+		}
+	}
+
+	return res;
+}
+ 
 
 double getstart(struct Position *posits, int npos, struct Figure *currfig, double x)
 {

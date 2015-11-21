@@ -13,6 +13,11 @@
 #define ROTNEST_MORE	1
 #define ROTNEST_FULL 	2
 
+#define CHECK_HEIGHT 0
+#define CHECK_RADIUS 1
+
+
+int (*checkpos)(struct Figure *currfig, struct Position *lastpos, double xpos, double ypos, double height, double width, int *placed);
 
 static int placefig2(struct Figure *figset, int fignum, struct Position *posits, int npos, double width, double height) 
 {
@@ -146,6 +151,10 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 	else if (attrs->type == ROTNEST_FULL) {
 		placefig = placefig2;
 	}
+
+	checkpos = checkpos_height;
+	if (attrs->checker == CHECK_RADIUS) 
+		checkpos = checkpos_radius;
 
 	mask = (int*)xcalloc(setsize, sizeof(int));
 	posits = (struct Position*)xmalloc(sizeof(struct Position) * setsize);
