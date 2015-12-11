@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS_LIB = -Wall -g3 -lm -fPIC
 CFLAGS_PROG = -Wall -g3 -I./include -L. -lnestapi -lpthread
 SRCS_PROG = example/main.c
-SRCS_LIB = geometry.c getpoly.c crosscheck.c cmnfuncs.c rotnest.c cmnnest.c
+SRCS_LIB = geometry.c getpoly.c crosscheck.c cmnfuncs.c rotnest.c cmnnest.c convolnest.c
 BIN = example/test
 OBJS_LIB = $(SRCS_LIB:.c=.o)
 
