@@ -22,3 +22,8 @@ struct NestAttrs {
 	double width, height;
 	FILE *logfile;
 };
+
+struct NestMatrix {
+	int **mtx;
+	int w, h;
+};
