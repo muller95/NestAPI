@@ -10,16 +10,38 @@
 #include "cmnfuncs.h"
 #include "cmnnest.h"
 
-
-static void evalline(struct Point *p1, struct Point *p2, double *outk, double *outb)
-{
-	*outk = (p1->y - p2->y) / (p1->x - p2->x);
-	*outb = p1->y - *outk * p1->x;
-}
-
 static double calcx(struct Point *p1, struct Point *p2, double y)
 {
 	return ((-1.0) * (p1->x * p2->y - p2->x * p1->y) - (p2->x - p1->x) * y) / (p1->y - p2->y);
+}
+
+static void floodfill(struct NestMatrix *mtx, int i, int j)
+{
+	if (mtx->mtx[i][j] > 0)
+		return;
+			
+	mtx->mtx[i][j] = 2;
+
+	if (i - 1 > 0)
+		floodfill(mtx, i - 1, j);
+
+	if (i + 1 < mtx->w)
+		floodfill(mtx, i + 1, j);
+
+	if (j - 1 > 0)
+		floodfill(mtx, i, j - 1);
+
+	if (j + 1 < mtx->h)
+		floodfill(mtx, i, j + 1);
+}
+
+static void floodmtx(struct NestMatrix *mtx)
+{
+	int i;
+	for (i = 0; i < mtx->w; i++)
+		if (mtx->mtx[i][0] == 0) {
+			floodfill(mtx, i, 0);
+		}
 }
 
 struct NestMatrix approxfig(struct Figure *fig)
@@ -33,7 +55,6 @@ struct NestMatrix approxfig(struct Figure *fig)
 	res.mtx = (int **)xmalloc(sizeof(int *) * w);
 	res.w = w;
 	res.h = h;
-
 	for (i = 0; i < w; i++) 
 		res.mtx[i] = (int *)xcalloc(h, sizeof(int));
 
@@ -83,6 +104,8 @@ struct NestMatrix approxfig(struct Figure *fig)
 			}
 		}
 	}
+
+	floodmtx(&res);
 
 	return res;
 }

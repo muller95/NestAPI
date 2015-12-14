@@ -9,7 +9,7 @@ OBJS_LIB = $(SRCS_LIB:.c=.o)
 all: lib single multi test
 
 test:
-	$(CC) $(CFLAGS_PROG) -o mtxttest example/mtxtest.c
+	$(CC) $(CFLAGS_PROG) -o mtxtest example/mtxtest.c
 
 single:
 	$(CC) $(CFLAGS_PROG) -o snest example/main.c
