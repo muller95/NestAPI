@@ -153,7 +153,7 @@ void *thrdfunc(void *d)
 	data = (struct ThreadData*)d;
 	
 	fprintf(stderr, "In thread heirnum=%d\n", data->heirnum);
-	rotnest(figset, setsize, &heirs[data->heirnum], &attrs);
+	mtxnest(figset, setsize, &heirs[data->heirnum], &attrs);
 	fflush(stderr);
 	free(data);
 	
@@ -240,7 +240,7 @@ int main(int argc, char **argv)
 		npts++;
 
 		if (npts == maxpts) {
-			maxprims *= 2;
+			maxpts *= 2;
 			figs[nfigs].prims[nprims].pts = (struct Point*)xrealloc(figs[nfigs].prims[nprims].pts, sizeof(struct Point) * maxpts);
 		}
 	}
@@ -255,8 +255,8 @@ int main(int argc, char **argv)
 	attrs.height = atof(argv[2]);
 	attrs.type = ROTNEST_DEFAULT;
 	attrs.checker = CHECK_RADIUS;
-	attrs.logfile = fopen("./logfile", "w+");
-	//attrs.logfile = stderr;
+//	attrs.logfile = fopen("./logfile", "w+");
+	attrs.logfile = stderr;
 
 		
 	figset = makeset(figs, nfigs, &setsize);
@@ -275,7 +275,7 @@ int main(int argc, char **argv)
 
 		fprintf(stderr, "start first nest\n");
 		fflush(stderr);
-		rotnest(figset, setsize, &indivs[0], &attrs);
+		mtxnest(figset, setsize, &indivs[0], &attrs);
 						
 		nindivs = 1;		
 		ext = 0;

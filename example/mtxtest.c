@@ -40,6 +40,7 @@ int main(int argc, char **argv)
 {
 	int maxprims, maxfigs, maxpts, state, namelen;
 	int nfigs, nprims, npts;
+	double angle;
 	struct Figure *figs;
 	struct NestMatrix res;
 	char str[2048];
@@ -113,7 +114,7 @@ int main(int argc, char **argv)
 		npts++;
 
 		if (npts == maxpts) {
-			maxprims *= 2;
+			maxpts *= 2;
 			figs[nfigs].prims[nprims].pts = (struct Point*)xrealloc(figs[nfigs].prims[nprims].pts, sizeof(struct Point) * maxpts);
 		}
 	}
@@ -121,13 +122,16 @@ int main(int argc, char **argv)
 	for (i = 0; i < nfigs; i++) {
 		figinit(&figs[i]);
 	}
-
-	res = approxfig(&figs[0]);
-	printf("%d %d\n", res.w, res.h);
-	for (i = 0; i < res.h; i++) {
-		for (j = 0; j < res.w; j++) 
-			printf("%d", res.mtx[j][i]);
-		printf("\n");
+	
+	for (angle = 0.0; angle < 360; angle += figs[0].angstep) {
+		rotate(&figs[0], figs[0].angstep);
+		res = approxfig(&figs[0], 0);
+		printf("%d %d\n", res.w, res.h);
+		for (i = 0; i < res.h; i++) {
+			for (j = 0; j < res.w; j++) 
+				printf("%d", res.mtx[j][i]);
+			printf("\n");
+		}
 	}
 	
 	return 0;

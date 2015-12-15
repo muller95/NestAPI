@@ -139,8 +139,9 @@ int checkpos_height(struct Figure *currfig, struct Position *lastpos, double xpo
 	hcurr = currfig->corner.y + ypos;
 	wcurr = xpos + currfig->corner.x;
 
-	if (hcurr >= height ||  wcurr >= width)				
+	if (hcurr >= height ||  wcurr >= width) {
 		return 0;
+	}
 
 
 
