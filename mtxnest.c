@@ -104,7 +104,6 @@ struct NestMatrix approxfig(struct Figure *fig, int resize)
 			pt = (p1.y > p2.y)? p1 : p2;
 						
 			if (trunc(pt.y) - trunc(pb.y) > 0) {
-
 				x1 = calcx(&p1, &p2, pb.y);
 				x2 = calcx(&p1, &p2, ceil(pb.y));
 				if (x1 > x2)
@@ -115,10 +114,10 @@ struct NestMatrix approxfig(struct Figure *fig, int resize)
 				for (x = (int)x1; x != (int)x2 + step; x += step)
 					res.mtx[x][(int)pb.y] = 1;
 					
-				pb.y = ceil(pb.y);
-				pt.y = floor(pt.y);	
+		/*		pb.y = ceil(pb.y);
+				pt.y = floor(pt.y);	*/
 				
-				for (y = pb.y; y < pt.y; y += 1.0) {
+				for (y = ceil(pb.y); y < floor(pt.y); y += 1.0) {
 
 					x1 = calcx(&p1, &p2, y);
 					x2 = calcx(&p1, &p2, y + 1.0);
@@ -148,12 +147,32 @@ struct NestMatrix approxfig(struct Figure *fig, int resize)
 					x1 = ceil(x1);
 				else if (x2 > x1)
 					x2 = ceil(x2);
-				step = (p1.x < p2.x)? 1.0 : -1.0;
+				step = (x1 < x2)? 1.0 : -1.0;
 				for (x = (int)x1; x != (int)x2 + step; x += step)
 					res.mtx[x][(int)p1.y] = 1;
 			}
 		}
 	}
+
+	for (i = 0; i < res.w; i++) {
+		for (j = 0; j < res.h; j++) 
+			if (res.mtx[i][j] == 1) {
+				if (i + 1 < res.w)
+					res.mtx[i + 1][j] = 2;
+				if (i - 1 > 0)
+					res.mtx[i - 1][j] = 2;		
+				if (j + 1 < res.h)	
+					res.mtx[i][j + 1] = 2;
+				if (j - 1 > 0)
+					res.mtx[i][j - 1] = 2;
+			}			
+		}
+
+	for (i = 0; i < res.w; i++) 
+		for (j = 0; j < res.h; j++) 
+			if (res.mtx[i][j] == 2) 
+				res.mtx[i][j] = 1;
+
 
 	if (resize > 0) {
 		int c;
@@ -172,13 +191,11 @@ struct NestMatrix approxfig(struct Figure *fig, int resize)
 			for (i = 0; i < res2.w; i++) {
 				for (j = 0; j < res2.h; j++) 
 					if (res2.mtx[i][j] == 1) {
-
 						res2.mtx[i + 1][j] = 2;
 						res2.mtx[i - 1][j] = 2;		
 						res2.mtx[i][j + 1] = 2;
 						res2.mtx[i][j - 1] = 2;
-					}
-				
+					}	
 			}
 
 			for (i = 0; i < res2.w; i++) 
@@ -236,11 +253,11 @@ static int placefig(struct Figure *figset, int fignum, struct Position *posits, 
 				for (y1 = 0; y1 < mtx.h; y1++) { 
 					for (x1 = 0; x1 < mtx.w; x1++) {
 						sum += place[x + x1][y + y1] * mtx.mtx[x1][y1];
-					/*	if (sum > 0)
-							break;*/
+						if (sum > 0)
+							break;
 					}
-		/*			if (sum)
-						break;*/
+					if (sum)
+						break;
 				}
 
 				if (sum) 
