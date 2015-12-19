@@ -280,7 +280,7 @@ static int placefig(struct Figure *figset, int fignum, struct Position *posits, 
 	if (placed) {
 		for (y = 0; y < minmtx.h; y++) 
 			for (x = 0; x < minmtx.w; x++)
-				place[x + (int)posits[npos].x][y + (int)posits[npos].y] = minmtx.mtx[x][y];
+				place[x + (int)posits[npos].x][y + (int)posits[npos].y] += minmtx.mtx[x][y];
 	}
 	return placed;
 }
@@ -384,4 +384,12 @@ void mtxnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 	indiv->height = tmpheight;
 	indiv->posits = posits;
 	indiv->npos = npos;	
+
+	for (j = 0; j < height; j++) {
+		for (i = 0; i < width; i++) 
+			fprintf(logfile, "%d", place[i][j]);
+		fprintf(logfile, "\n");
+	}
+	fprintf(logfile, "\n");
+	fflush(logfile);
 }

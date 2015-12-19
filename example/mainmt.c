@@ -255,7 +255,7 @@ int main(int argc, char **argv)
 	attrs.height = atof(argv[2]);
 	attrs.type = ROTNEST_DEFAULT;
 	attrs.checker = CHECK_RADIUS;
-//	attrs.logfile = fopen("./logfile", "w+");
+//	attrs.logfile = fopen("/home/vadim/logfile", "w+");
 	attrs.logfile = stderr;
 
 		
