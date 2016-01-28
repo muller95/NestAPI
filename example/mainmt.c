@@ -14,6 +14,7 @@
 #define STATE_PRIM 1
 
 #define INDIVS_PER_ITER 30
+#define NEST_RESIZE 10
 
 struct ThreadData {
 	int heirnum;
@@ -118,9 +119,9 @@ static int figcmp(const void *a, const void *b)
 	sqr1 = fig1->corner.x * fig1->corner.y;
 	sqr2 = fig2->corner.x * fig2->corner.y;
 	
-	if (sqr1 > sqr2)
+	if (sqr1 < sqr2)
 		return 1;
-	else if (sqr1 < sqr2)
+	else if (sqr1 > sqr2)
 		return -1;
 	else
 		return 0;
@@ -153,7 +154,7 @@ void *thrdfunc(void *d)
 	data = (struct ThreadData*)d;
 	
 	fprintf(stderr, "In thread heirnum=%d\n", data->heirnum);
-	mtxnest(figset, setsize, &heirs[data->heirnum], &attrs);
+	mtxnest(figset, setsize, NEST_RESIZE, &heirs[data->heirnum], &attrs);
 	fflush(stderr);
 	free(data);
 	
@@ -275,7 +276,7 @@ int main(int argc, char **argv)
 
 		fprintf(stderr, "start first nest\n");
 		fflush(stderr);
-		mtxnest(figset, setsize, &indivs[0], &attrs);
+		mtxnest(figset, setsize, NEST_RESIZE, &indivs[0], &attrs);
 						
 		nindivs = 1;		
 		ext = 0;
@@ -340,7 +341,7 @@ int main(int argc, char **argv)
 				
 				
 				equal = 0;
-				for (k = 0; k < 1000 && nnew == 0; k++) {
+				for (k = 0; k < 100000 && nnew == 0; k++) {
 					int res;
 					res = mutate(&indivs[0], &heirs[0], setsize);
 					if (res < 0) {

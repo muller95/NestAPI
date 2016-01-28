@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 	
 	for (angle = 0.0; angle < 360; angle += figs[0].angstep) {
 		rotate(&figs[0], figs[0].angstep);
-		res = approxfig(&figs[0], 0);
+		res = approxfig(&figs[0], 10);
 		printf("%d %d\n", res.w, res.h);
 		for (i = 0; i < res.h; i++) {
 			for (j = 0; j < res.w; j++) 
