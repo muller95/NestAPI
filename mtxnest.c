@@ -9,9 +9,7 @@
 #include "nest_structs.h"
 #include "cmnfuncs.h"
 #include "cmnnest.h"
-
-#define CHECK_HEIGHT 0
-#define CHECK_RADIUS 1
+#include "nestdefs.h"
 
 int (*checkpos)(struct Figure *currfig, struct Position *lastpos, double xpos, double ypos, double height, double width, int *placed);
 
@@ -203,7 +201,7 @@ struct NestMatrix approxfig(struct Figure *fig, int resize)
 	return res;
 }
 
-static int placefig(struct Figure *figset, int fignum, int resize, struct Position *posits, int **place, int npos, int width, int height) 
+static int placefig0(struct Figure *figset, int fignum, int resize, struct Position *posits, int **place, int npos, int width, int height) 
 {
 	int placed = 0, angstep;
 	double angle;
@@ -324,14 +322,23 @@ void mtxnest(struct Figure *figset, int setsize, int resize, struct Individ *ind
 	struct Position *posits;
 	FILE *logfile;
 	double mtx[3][3];
-
+	int (*placefig)(struct Figure *figset, int fignum, int resize, struct Position *posits, int **place, int npos, int width, int height); 
+	
 	logfile = attrs->logfile;
 	width = (int)attrs->width;
 	height = (int)attrs->height;
 	
-	checkpos = checkpos_radius;
-/*	if (attrs->checker == CHECK_RADIUS) 
-		checkpos = checkpos_radius;*/
+		
+	checkpos = checkpos_height;
+	if (attrs->checker == CHECK_RADIUS) 
+		checkpos = checkpos_radius;
+
+	if (attrs->type == MTXNEST_FULL) {
+		placefig = placefig1;
+	} else {
+		checkpos = checkpos_height;
+		placefig = placefig0;
+	}
 
 	mask = (int*)xcalloc(setsize, sizeof(int));
 	posits = (struct Position*)xmalloc(sizeof(struct Position) * setsize);
@@ -349,7 +356,7 @@ void mtxnest(struct Figure *figset, int setsize, int resize, struct Individ *ind
 		
 		fignum = indiv->genom[i];
 	
-		if (!placefig1(figset, fignum, resize, posits, place, npos, width, height)) {
+		if (!placefig(figset, fignum, resize, posits, place, npos, width, height)) {
 			fprintf(logfile, "fail to position %d\n", fignum);
 			continue;
 		}
@@ -382,7 +389,7 @@ void mtxnest(struct Figure *figset, int setsize, int resize, struct Individ *ind
 			continue;
 		}
 
-		if (!placefig1(figset, i, resize, posits, place, npos, width, height)) {
+		if (!placefig(figset, i, resize, posits, place, npos, width, height)) {
 			for (j = i; j < setsize; j++) {
 				if (figset[i].id == figset[j].id) {
 					mask[j] = -1;

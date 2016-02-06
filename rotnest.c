@@ -8,14 +8,7 @@
 #include "nest_structs.h"
 #include "cmnfuncs.h"
 #include "cmnnest.h"
-
-#define ROTNEST_DEFAULT 0
-#define ROTNEST_MORE	1
-#define ROTNEST_FULL 	2
-
-#define CHECK_HEIGHT 0
-#define CHECK_RADIUS 1
-
+#include "nestdefs.h"
 
 int (*checkpos)(struct Figure *currfig, struct Position *lastpos, double xpos, double ypos, double height, double width, int *placed);
 
