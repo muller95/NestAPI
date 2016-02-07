@@ -164,11 +164,9 @@ void *thrdfunc(void *d)
 int main(int argc, char **argv)
 {
 	int maxprims, maxfigs, maxpts, state, maxindivs, namelen;
-	int nfigs, nprims, npts, /*setsize,*/ iters;
-	int ext, nested, need;
-	//struct Individ *indivs, tmp;
-	//struct Individ heirs[INDIVS_PER_ITER + 1];
-	struct Figure *figs/*, figset*/;
+	int nfigs, nprims, npts, iters;
+	int ext, nested, need, type, check;
+	struct Figure *figs;
 	char str[2048];
 	pthread_t thrds[INDIVS_PER_ITER + 1];
 	int i, j, k, m, nindivs;
@@ -178,7 +176,6 @@ int main(int argc, char **argv)
 	state = STATE_NEWFIG;
 	nfigs = nprims = npts = 0;
 	figs = (struct Figure*)xmalloc(sizeof(struct Figure) * maxfigs);
-	//printf("started writing\n");
 	while (fgets(str, 2048, stdin)) {
 		double x, y;
 		trim(str);
@@ -246,20 +243,32 @@ int main(int argc, char **argv)
 		}
 	}
 
-//	printf("reading done\n");
 	for (i = 0; i < nfigs; i++) {
 		figinit(&figs[i]);
 	}
-	//printf("init done\n");
 	
 	attrs.width = atof(argv[1]);
 	attrs.height = atof(argv[2]);
-	attrs.type = ROTNEST_DEFAULT;
-	attrs.checker = CHECK_RADIUS;
-//	attrs.logfile = fopen("/home/vadim/logfile", "w+");
+	iters = atoi(argv[3]);
+	type = atoi(argv[4]);
+	check = atoi(argv[5]);
+	
+	if (type) 
+		attrs.type = MTXNEST_DEFAULT;
+	else
+		attrs.type = MTXNEST_FULL;
+	
+	
+	attrs.checker = CHECK_HEIGHT;
+	if (check == 1)
+		attrs.checker = CHECK_RADIUS;
+	else if (check == 2);
+		attrs.checker = CHECK_SCALE;
 	attrs.logfile = stderr;
 
 		
+	fprintf(stderr, "iters=%d\n", iters);
+	fflush(stderr);
 	figset = makeset(figs, nfigs, &setsize);
 	need = setsize;
 	nested  = 0;
@@ -270,7 +279,6 @@ int main(int argc, char **argv)
 
 		maxindivs = 1024;
 		indivs = (struct Individ*)xmalloc(sizeof(struct Individ) * maxindivs);
-		//printf("inidivs alloced\n");
 		indivs[0].genom = (int*)xmalloc(sizeof(int) * setsize);
 		indivs[0].gensize = 0;
 
@@ -280,7 +288,6 @@ int main(int argc, char **argv)
 						
 		nindivs = 1;		
 		ext = 0;
-		iters = atoi(argv[3]);
 		for (i = 0; i < iters && !ext; i++) {
 			int nnew = 0, equal = 0, oldn;
 				
@@ -426,8 +433,6 @@ int main(int argc, char **argv)
 		setsize = need - nested;
 	}
 	fflush(stdout);
-
-//	ppos2file("./drawposits", indivs[0].posits, indivs[0].npos);
 	
 	return 0;
 }

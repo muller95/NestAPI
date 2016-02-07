@@ -10,7 +10,7 @@
 #include "cmnnest.h"
 #include "nestdefs.h"
 
-int (*checkpos)(struct Figure *currfig, struct Position *lastpos, double xpos, double ypos, double height, double width, int *placed);
+int (*checkpos)(struct Figure *currfig, struct Position *postis, int npos, double xpos, double ypos, double height, double width, int *placed);
 
 static int placefig2(struct Figure *figset, int fignum, struct Position *posits, int npos, double width, double height) 
 {
@@ -29,7 +29,7 @@ static int placefig2(struct Figure *figset, int fignum, struct Position *posits,
 			ypos = getstart(posits, npos, &currfig, x);
 			ymove(&xpos, &ypos,	&currfig, posits, npos);
 				
-			if (checkpos(&currfig, &posits[npos], xpos, ypos, height, width, &placed))
+			if (checkpos(&currfig, posits, npos, xpos, ypos, height, width, &placed))
 				posits[npos].angle = angle;
 			
 			if (ypos == 0)
@@ -76,7 +76,7 @@ static int placefig1(struct Figure *figset, int fignum, struct Position *posits,
 			ytmp = ypos;
 			ymove(&xpos[i], &ytmp,	&currfig, posits, npos);
 
-			if (checkpos(&currfig, &posits[npos], xpos[i], ytmp, height, width, &placed))
+			if (checkpos(&currfig, posits, npos, xpos[i], ytmp, height, width, &placed))
 				posits[npos].angle = angle;
 		}
 				
@@ -112,7 +112,7 @@ static int placefig0(struct Figure *figset, int fignum, struct Position *posits,
 		}
 		
 		ymove(&xpos, &ypos,	&currfig, posits, npos);
-		if (checkpos(&currfig, &posits[npos], xpos, ypos, height, width, &placed)) {
+		if (checkpos(&currfig, posits, npos, xpos, ypos, height, width, &placed)) {
 			posits[npos].angle = angle;
 		}
 				
@@ -138,16 +138,16 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 	height = attrs->height;
 	
 	placefig = placefig0;
-	if (attrs->type == ROTNEST_MORE) {
+	if (attrs->type == ROTNEST_MORE)
 		placefig = placefig1;
-	}
-	else if (attrs->type == ROTNEST_FULL) {
+	else if (attrs->type == ROTNEST_FULL) 
 		placefig = placefig2;
-	}
 
 	checkpos = checkpos_height;
 	if (attrs->checker == CHECK_RADIUS) 
 		checkpos = checkpos_radius;
+	else if (attrs->checker == CHECK_SCALE)
+		checkpos = checkpos_scale;
 
 	mask = (int*)xcalloc(setsize, sizeof(int));
 	posits = (struct Position*)xmalloc(sizeof(struct Position) * setsize);
@@ -220,6 +220,7 @@ void rotnest(struct Figure *figset, int setsize, struct Individ *indiv, struct N
 		indiv->genom[npos - 1] = i;
 	}
 	
+	free(mask);
 	indiv->gensize = npos;
 	indiv->height = tmpheight;
 	indiv->posits = posits;

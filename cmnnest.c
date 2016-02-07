@@ -14,7 +14,6 @@
 double getstart(struct Position *posits, int npos, struct Figure *currfig, double x);
 void ymove(double *xpos, double *ypos, struct Figure *currfig, struct Position *posits, int npos);
 void xmove(double *xpos, double *ypos, struct Figure *currfig, struct Position *posits, int npos);
-int checkpos(struct Figure *currfig, struct Position *lastpos, double xpos, double ypos, double height, double width, int *placed);
 int mutate(struct Individ *src, struct Individ *mutant, int setsize);
 int gensequal(struct Individ *indiv1, struct Individ *indiv2);
 int gensequal2(struct Individ *indiv1, struct Individ *indiv2, struct Figure *figset);
@@ -131,7 +130,7 @@ int mutate(struct Individ *src, struct Individ *mutant, int setsize)
 	return SUCCESSFUL;
 }
 
-int checkpos_height(struct Figure *currfig, struct Position *lastpos, double xpos, double ypos, double height, double width, int *placed)
+int checkpos_height(struct Figure *currfig, struct Position *posits, int npos, double xpos, double ypos, double height, double width, int *placed)
 {
 	int res = 0;
 	double hcurr, wcurr;
@@ -143,38 +142,36 @@ int checkpos_height(struct Figure *currfig, struct Position *lastpos, double xpo
 		return 0;
 	}
 
-
-
 	if (*placed == 0) {
 		*placed = 1;
 		res = 1;
-		lastpos->fig = figdup(currfig);
-		lastpos->x = xpos;
-		lastpos->y = ypos;
+		posits[npos].fig = figdup(currfig);
+		posits[npos].x = xpos;
+		posits[npos].y = ypos;
 	} else if (*placed == 1) {
 		double hprev, wprev, gy, mingy;
 
-		hprev = lastpos->y + lastpos->fig.corner.y;
-		wprev = lastpos->x + lastpos->fig.corner.x;
+		hprev = posits[npos].y + posits[npos].fig.corner.y;
+		wprev = posits[npos].x + posits[npos].fig.corner.x;
 
 		gy = currfig->gcenter.y + ypos;
-		mingy = lastpos->fig.gcenter.y + lastpos->y;
+		mingy = posits[npos].fig.gcenter.y + posits[npos].y;
 
 		if (hcurr < hprev || 
 			((fabs(hcurr - hprev) < DBL_EPSILON && gy < mingy) || 
 			(fabs(hcurr - hprev) < DBL_EPSILON && fabs(gy - mingy) < DBL_EPSILON && wcurr < wprev))) {
 			res = 1;
-			destrfig(&(lastpos->fig));
-			lastpos->fig = figdup(currfig);
-			lastpos->x = xpos;
-			lastpos->y = ypos;
+			destrfig(&(posits[npos].fig));
+			posits[npos].fig = figdup(currfig);
+			posits[npos].x = xpos;
+			posits[npos].y = ypos;
 		}
 	}
 
 	return res;
 }
 
-int checkpos_radius(struct Figure *currfig, struct Position *lastpos, double xpos, double ypos, double height, double width, int *placed)
+int checkpos_radius(struct Figure *currfig, struct Position *posits, int npos, double xpos, double ypos, double height, double width, int *placed)
 {
 	int res = 0;
 	double hcurr, wcurr;
@@ -185,24 +182,22 @@ int checkpos_radius(struct Figure *currfig, struct Position *lastpos, double xpo
 	if (hcurr >= height ||  wcurr >= width)				
 		return 0;
 
-
-
 	if (*placed == 0) {
 		*placed = 1;
 		res = 1;
-		lastpos->fig = figdup(currfig);
-		lastpos->x = xpos;
-		lastpos->y = ypos;
+		posits[npos].fig = figdup(currfig);
+		posits[npos].x = xpos;
+		posits[npos].y = ypos;
 	} else if (*placed == 1) {
 		double hprev, rcurr, rprev, gy, gx, gyprev, gxprev;
 		int checkeq;
 
-		hprev = lastpos->y + lastpos->fig.corner.y;
+		hprev = posits[npos].y + posits[npos].fig.corner.y;
 
 		gy = currfig->gcenter.y + ypos;
-		gyprev = lastpos->fig.gcenter.y + lastpos->y;
+		gyprev = posits[npos].fig.gcenter.y + posits[npos].y;
 		gx = currfig->gcenter.x + xpos;
-		gxprev = lastpos->fig.gcenter.x + lastpos->x;
+		gxprev = posits[npos].fig.gcenter.x + posits[npos].x;
 
 		rcurr = sqrt(gx * gx + gy * gy);
 		rprev = sqrt(gxprev * gxprev + gyprev * gyprev);
@@ -212,10 +207,70 @@ int checkpos_radius(struct Figure *currfig, struct Position *lastpos, double xpo
 	
 		if (checkeq) {
 			res = 1;
-			destrfig(&(lastpos->fig));
-			lastpos->fig = figdup(currfig);
-			lastpos->x = xpos;
-			lastpos->y = ypos;
+			destrfig(&(posits[npos].fig));
+			posits[npos].fig = figdup(currfig);
+			posits[npos].x = xpos;
+			posits[npos].y = ypos;
+		}
+	}
+
+	return res;
+}
+
+
+int checkpos_scale(struct Figure *currfig, struct Position *posits, int npos, double xpos, double ypos, double height, double width, int *placed)
+{
+	int res = 0;
+	double hcurr, wcurr;
+
+	hcurr = currfig->corner.y + ypos;
+	wcurr = xpos + currfig->corner.x;
+
+	if (hcurr >= height ||  wcurr >= width) {
+		return 0;
+	}
+
+	if (*placed == 0) {
+		*placed = 1;
+		res = 1;
+		posits[npos].fig = figdup(currfig);
+		posits[npos].x = xpos;
+		posits[npos].y = ypos;
+	} else if (*placed == 1) {
+		int i;
+		double hprev, wprev, gy, mingy;
+		double xmax, ymax, sprev, scurr;
+		
+		xmax = posits[0].x + posits[0].fig.corner.x;
+		ymax = posits[0].y + posits[0].fig.corner.y;
+		for (i = 1; i <= npos; i++) {
+			double xtmp, ytmp;
+			xtmp = posits[i].x + posits[i].fig.corner.x;
+			ytmp = posits[i].y + posits[i].fig.corner.y;
+
+			xmax = (xtmp > xmax)? xtmp : xmax;
+			ymax = (ytmp > ymax)? ytmp : ymax;
+		}
+
+		sprev = xmax * ymax;
+		xmax = (wcurr > xmax)? wcurr : xmax;
+		ymax = (hcurr > ymax)? hcurr : ymax;
+		scurr = xmax * ymax;
+
+		hprev = posits[npos].y + posits[npos].fig.corner.y;
+		wprev = posits[npos].x + posits[npos].fig.corner.x;
+
+		gy = currfig->gcenter.y + ypos;
+		mingy = posits[npos].fig.gcenter.y + posits[npos].y;
+
+		if (scurr < sprev || (fabs(scurr - sprev) < DBL_EPSILON && hcurr < hprev) || 
+			((fabs(scurr - sprev) < DBL_EPSILON && fabs(hcurr - hprev) < DBL_EPSILON && gy < mingy) || 
+			(fabs(scurr - sprev) < DBL_EPSILON && fabs(hcurr - hprev) < DBL_EPSILON && fabs(gy - mingy) < DBL_EPSILON && wcurr < wprev))) {
+			res = 1;
+			destrfig(&(posits[npos].fig));
+			posits[npos].fig = figdup(currfig);
+			posits[npos].x = xpos;
+			posits[npos].y = ypos;
 		}
 	}
 

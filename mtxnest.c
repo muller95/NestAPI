@@ -11,12 +11,12 @@
 #include "cmnnest.h"
 #include "nestdefs.h"
 
-int (*checkpos)(struct Figure *currfig, struct Position *lastpos, double xpos, double ypos, double height, double width, int *placed);
+int (*checkpos)(struct Figure *currfig, struct Position *posits, int npos, double xpos, double ypos, double height, double width, int *placed);
 
 static double calcx(struct Point *p1, struct Point *p2, double y)
 {
 	return ((-1.0) * (p1->x * p2->y - p2->x * p1->y) - (p2->x - p1->x) * y) / (p1->y - p2->y);
-}
+} 
 
 static void floodfill(struct NestMatrix *mtx, int i, int j)
 {
@@ -55,6 +55,16 @@ static void floodmtx(struct NestMatrix *mtx)
 			floodfill(mtx, mtx->w - 1, i);
 	}
 
+}
+
+static void destrmtx(struct NestMatrix *mtx)
+{	
+	int i;
+
+	for (i = 0; i < mtx->w; i++)
+		free(mtx->mtx[i]);
+	
+	free(mtx->mtx);
 }
 
 struct NestMatrix mtxdup(struct NestMatrix *src)
@@ -163,7 +173,7 @@ struct NestMatrix approxfig(struct Figure *fig, int resize)
 					res.mtx[i][j + 1] = 2;
 				if (j - 1 > 0)
 					res.mtx[i][j - 1] = 2;
-			}			
+			}	
 		}
 
 	for (i = 0; i < res.w; i++) 
@@ -203,7 +213,7 @@ struct NestMatrix approxfig(struct Figure *fig, int resize)
 
 static int placefig0(struct Figure *figset, int fignum, int resize, struct Position *posits, int **place, int npos, int width, int height) 
 {
-	int placed = 0, angstep;
+	int placed = 0, angstep, first = 1;
 	double angle;
 	int x, y;
 	struct Figure currfig;
@@ -235,15 +245,19 @@ static int placefig0(struct Figure *figset, int fignum, int resize, struct Posit
 				if (sum > 0) 
 					continue;
 
-				if (checkpos(&currfig, &posits[npos], (double)(x * resize), (double)(y * resize), (double)height, (double)width, &placed)) {
+				if (checkpos(&currfig, posits, npos, (double)(x * resize), (double)(y * resize), (double)height, (double)width, &placed)) {
 					posits[npos].angle = angle;
+					if (!first)
+						destrmtx(&minmtx);
+					first = 0;
 					minmtx= mtxdup(&mtx);
 				}
-
+				
 				x = width;
 				y = height;
 			}
 		}
+		destrmtx(&mtx);
 		destrfig(&currfig);
 	}
 	if (placed) {
@@ -257,7 +271,7 @@ static int placefig0(struct Figure *figset, int fignum, int resize, struct Posit
 
 static int placefig1(struct Figure *figset, int fignum, int resize, struct Position *posits, int **place, int npos, int width, int height) 
 {
-	int placed = 0, angstep;
+	int placed = 0, angstep, first = 1;
 	double angle;
 	int x, y;
 	struct Figure currfig;
@@ -289,8 +303,11 @@ static int placefig1(struct Figure *figset, int fignum, int resize, struct Posit
 				if (sum > 0) 
 					continue;
 
-				if (checkpos(&currfig, &posits[npos], (double)(x * resize), (double)(y * resize), (double)height, (double)width, &placed)) {
+				if (checkpos(&currfig, posits, npos, (double)(x * resize), (double)(y * resize), (double)height, (double)width, &placed)) {
 					posits[npos].angle = angle;
+					if (!first)
+						destrmtx(&minmtx);
+					first = 0;
 					minmtx= mtxdup(&mtx);
 				}
 
@@ -301,6 +318,7 @@ static int placefig1(struct Figure *figset, int fignum, int resize, struct Posit
 				break;
 			}
 		}
+		destrmtx(&mtx);
 		destrfig(&currfig);
 	}
 	if (placed) {
@@ -332,6 +350,8 @@ void mtxnest(struct Figure *figset, int setsize, int resize, struct Individ *ind
 	checkpos = checkpos_height;
 	if (attrs->checker == CHECK_RADIUS) 
 		checkpos = checkpos_radius;
+	else if (attrs->checker == CHECK_SCALE)
+		checkpos = checkpos_scale;
 
 	if (attrs->type == MTXNEST_FULL) {
 		placefig = placefig1;
@@ -374,7 +394,7 @@ void mtxnest(struct Figure *figset, int setsize, int resize, struct Individ *ind
 		npos++;
 		
 		tmpheight = (tmpheight > posits[npos - 1].fig.corner.y + posits[npos - 1].y)? tmpheight : posits[npos - 1].fig.corner.y + posits[npos - 1].y;
-		fprintf(logfile, "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", fignum, npos, posits[npos - 1].angle, tmpheight, posits[npos - 1].x, posits[npos - 1].y);
+//		fprintf(logfile, "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", fignum, npos, posits[npos - 1].angle, tmpheight, posits[npos - 1].x, posits[npos - 1].y);
 	}
 
 	if (npos < indiv->gensize) {
@@ -411,14 +431,21 @@ void mtxnest(struct Figure *figset, int setsize, int resize, struct Individ *ind
 		npos++;
 		
 		tmpheight = (tmpheight > posits[npos - 1].fig.corner.y + posits[npos - 1].y)? tmpheight : posits[npos - 1].fig.corner.y + posits[npos - 1].y;
-		fprintf(logfile, "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", i, npos, posits[npos - 1].angle, tmpheight, posits[npos - 1].x, posits[npos - 1].y);	
+//		fprintf(logfile, "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", i, npos, posits[npos - 1].angle, tmpheight, posits[npos - 1].x, posits[npos - 1].y);	
 		indiv->genom[npos - 1] = i;
 	}
 	
 	indiv->gensize = npos;
 	indiv->height = tmpheight;
 	indiv->posits = posits;
-	indiv->npos = npos;	
+	indiv->npos = npos;
+	
+	free(mask);	
+	for (i = 0; i < width / resize; i++)
+		free(place[i]);
+	free(place);
+	
+
 
 /*	for (j = 0; j < height; j++) {
 		for (i = 0; i < width; i++) 
@@ -426,5 +453,5 @@ void mtxnest(struct Figure *figset, int setsize, int resize, struct Individ *ind
 		fprintf(logfile, "\n");
 	}
 	fprintf(logfile, "\n");*/
-	fflush(logfile);
+//	fflush(logfile);
 }
