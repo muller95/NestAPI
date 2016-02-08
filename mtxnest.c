@@ -204,7 +204,8 @@ struct NestMatrix approxfig(struct Figure *fig, int resize)
 				res2.mtx[i / resize][j / resize] += res.mtx[i][j];
 				res2.mtx[i / resize][j / resize] = res2.mtx[i / resize][j / resize] >= 1 ? 1 : 0; 
 			}
-					
+		
+		destrmtx(&res);		
 		return res2;
 	}
 
@@ -261,9 +262,11 @@ static int placefig0(struct Figure *figset, int fignum, int resize, struct Posit
 		destrfig(&currfig);
 	}
 	if (placed) {
-		for (y = 0; y < minmtx.h; y++) 
+		for (y = 0; y < minmtx.h; y++) {
 			for (x = 0; x < minmtx.w; x++)
 				place[x + (int)posits[npos].x / resize][y + (int)posits[npos].y / resize] += minmtx.mtx[x][y];
+		}
+		destrmtx(&minmtx);
 	}
 	return placed;
 }
@@ -322,9 +325,11 @@ static int placefig1(struct Figure *figset, int fignum, int resize, struct Posit
 		destrfig(&currfig);
 	}
 	if (placed) {
-		for (y = 0; y < minmtx.h; y++) 
+		for (y = 0; y < minmtx.h; y++)  {
 			for (x = 0; x < minmtx.w; x++)
 				place[x + (int)posits[npos].x / resize][y + (int)posits[npos].y / resize] += minmtx.mtx[x][y];
+		}
+		destrmtx(&minmtx);
 	}
 	return placed;
 }

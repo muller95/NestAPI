@@ -168,7 +168,7 @@ int main(int argc, char **argv)
 	int ext, nested, need, type, check;
 	struct Figure *figs;
 	char str[2048];
-	pthread_t thrds[INDIVS_PER_ITER + 1];
+	struct NestThread thrds[INDIVS_PER_ITER + 1];
 	int i, j, k, m, nindivs;
 
 	maxfigs = 128;
@@ -334,7 +334,7 @@ int main(int argc, char **argv)
 						heirs[nnew] = tmp[k];
 						fprintf(stderr, "k=%d data->heirnum=%d\n", k, data->heirnum);
 
-						if (pthread_create(&thrds[nnew], NULL, thrdfunc, data) != 0) {
+						if (nthread_start(&thrds[nnew], thrdfunc, data) != 0) {
 							perror("Error creating thread\n");
 							exit(1);
 						}
@@ -366,7 +366,7 @@ int main(int argc, char **argv)
 						struct ThreadData *data;
 						data = (struct ThreadData*)xmalloc(sizeof(struct ThreadData));
 						data->heirnum = 0;
-						if (pthread_create(&thrds[nnew], NULL, thrdfunc, data) != 0) {
+						if (nthread_start(&thrds[nnew], thrdfunc, data) != 0) {
 							perror("Error creating thread\n");
 							exit(1);
 						}
@@ -379,7 +379,7 @@ int main(int argc, char **argv)
 				fprintf(stderr, "\nnnew=%d\n", nnew);
 				fflush(stderr); 
 				for (j = 0; j < nnew; j++) {
-					pthread_join(thrds[j], NULL);
+					nthread_join(&thrds[j]);
 					fprintf(stderr, "%d done\n", j);
 					fflush(stderr);
 					indivs[nindivs] = heirs[j];
