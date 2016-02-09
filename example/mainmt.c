@@ -14,7 +14,6 @@
 #define STATE_PRIM 1
 
 #define INDIVS_PER_ITER 30
-#define NEST_RESIZE 10
 
 struct ThreadData {
 	int heirnum;
@@ -24,7 +23,7 @@ struct NestAttrs attrs;
 struct Individ *indivs;
 struct Individ heirs[INDIVS_PER_ITER + 1];
 struct Figure *figset;
-int setsize;
+int setsize, resize;
 
 void trim(char *str)
 {
@@ -154,7 +153,7 @@ void *thrdfunc(void *d)
 	data = (struct ThreadData*)d;
 	
 	fprintf(stderr, "In thread heirnum=%d\n", data->heirnum);
-	mtxnest(figset, setsize, NEST_RESIZE, &heirs[data->heirnum], &attrs);
+	mtxnest(figset, setsize, resize, &heirs[data->heirnum], &attrs);
 	fflush(stderr);
 	free(data);
 	
@@ -252,6 +251,7 @@ int main(int argc, char **argv)
 	iters = atoi(argv[3]);
 	type = atoi(argv[4]);
 	check = atoi(argv[5]);
+	resize = atoi(argv[6]);
 	
 	if (type) 
 		attrs.type = MTXNEST_DEFAULT;
@@ -284,7 +284,7 @@ int main(int argc, char **argv)
 
 		fprintf(stderr, "start first nest\n");
 		fflush(stderr);
-		mtxnest(figset, setsize, NEST_RESIZE, &indivs[0], &attrs);
+		mtxnest(figset, setsize, resize, &indivs[0], &attrs);
 						
 		nindivs = 1;		
 		ext = 0;
