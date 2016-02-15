@@ -35,14 +35,14 @@ int nthread_join(struct NestThread *nthread)
 int nthread_start(struct NestThread *nthread, void *startpt(void *arg), void *data)
 {
 	HANDLE hthread;
-	DWORD *thredid;
+	DWORD *threadid;
 	threadid = (DWORD*)malloc(sizeof(DWORD));
 	hthread = CreateThread(NULL, 0, startpt, data, 0, threadid);
 	if (hthread == NULL)
 		free(threadid);
 	else {
 		nthread->arg1 = (void *)hthread;
-		nthread->arg2 = (void *)threadid 
+		nthread->arg2 = (void *)threadid; 
 	}
 	return (hthread == NULL)? 1 : 0;		
 }

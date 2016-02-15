@@ -84,9 +84,30 @@ struct NestMatrix mtxdup(struct NestMatrix *src)
 	return res;
 }
 
-struct NestMatrix approxfig(struct Figure *fig, int resize)
+static struct NestMatrix resizemtx(struct NestMatrix *src, int resize)
 {
-	struct NestMatrix res, res2;
+	int i, j;
+	struct NestMatrix res;
+	
+	res.w = src->w / resize + (src->w % resize > 0 ? 1 : 0);
+	res.h = src->h / resize + (src->h % resize > 0 ? 1 : 0);
+	res.mtx = (int **)xmalloc(sizeof(int *) * res.w);
+	for (i = 0; i < res.w; i++) 
+		res.mtx[i] = (int *)xcalloc(res.h, sizeof(int));
+
+	for (i = 0; i < src->w; i++) 
+		for (j = 0; j < src->h; j++) {
+			res.mtx[i / resize][j / resize] += src->mtx[i][j];
+			res.mtx[i / resize][j / resize] = res.mtx[i / resize][j / resize] >= 1 ? 1 : 0; 
+		}
+		
+	return res;
+}
+
+struct NestMatrix approxfig(struct Figure *fig, int bound, int resize)
+{
+	struct NestMatrix res, tmp, res2;
+	double mtx[3][3];
 	int i, j, w, h;
 	
 	w = (int)ceil(fig->corner.x) + 1;
@@ -192,27 +213,70 @@ struct NestMatrix approxfig(struct Figure *fig, int resize)
 				res.mtx[i][j] = 1;
 		}
 
-	if (resize > 1) {
-		res2.w = res.w / resize + (res.w % resize > 0 ? 1 : 0);
-		res2.h = res.h / resize + (res.h % resize > 0 ? 1 : 0);
+	if (bound > 0) {
+		int c;
+
+		res2.w = w + bound * 2;
+		res2.h = h + bound * 2;
 		res2.mtx = (int **)xmalloc(sizeof(int *) * res2.w);
 		for (i = 0; i < res2.w; i++) 
 			res2.mtx[i] = (int *)xcalloc(res2.h, sizeof(int));
 
 		for (i = 0; i < res.w; i++) 
-			for (j = 0; j < res.h; j++) {
-				res2.mtx[i / resize][j / resize] += res.mtx[i][j];
-				res2.mtx[i / resize][j / resize] = res2.mtx[i / resize][j / resize] >= 1 ? 1 : 0; 
-			}
-		
-		destrmtx(&res);		
-		return res2;
-	}
+			for (j = 0; j < res.h; j++)
+				res2.mtx[i + bound][j + bound] = res.mtx[i][j];
 
-	return res;
+		for (c = 0; c < bound; c++) {
+			for (i = 0; i < res2.w; i++) {
+				for (j = 0; j < res2.h; j++) 
+					if (res2.mtx[i][j] == 1) {
+						res2.mtx[i + 1][j] = 2;
+						res2.mtx[i - 1][j] = 2;		
+						res2.mtx[i][j + 1] = 2;
+						res2.mtx[i][j - 1] = 2;
+					}	
+			}
+
+			for (i = 0; i < res2.w; i++) 
+				for (j = 0; j < res2.h; j++) 
+					if (res2.mtx[i][j] == 2) 
+						res2.mtx[i][j] = 1;
+		}
+	
+		floodmtx(&res2);	
+		
+		for (i = 0; i < res2.w; i++) 
+			for (j = 0; j < res2.h; j++) {
+				if (res2.mtx[i][j] == 2) 
+					res2.mtx[i][j] = 0;
+				else 
+					res2.mtx[i][j] = 1;
+			}
+
+		destrmtx(&res);	
+		if (resize > 1) {
+			tmp = resizemtx(&res2, resize);
+			destrmtx(&res2);
+		}
+		for (i = 0; i < 3; i++) {
+			for (j = 0; j < 3; j++) {
+				mtx[i][j] = (i == j)? 1.0 : 0.0;
+			}
+		}
+		mtx[0][2] = bound;
+		mtx[1][2] = bound;
+		mtxmult(mtx, fig);
+		return tmp;
+	}	
+	
+	if (resize > 1) {
+		tmp = resizemtx(&res, resize);
+		destrmtx(&res);
+	}
+	return tmp;
 }
 
-static int placefig0(struct Figure *figset, int fignum, int resize, struct Position *posits, int **place, int npos, int width, int height) 
+static int placefig0(struct Figure *figset, int fignum, int bound, int resize, struct Position *posits, int **place, int npos, int width, int height) 
 {
 	int placed = 0, angstep, first = 1;
 	double angle;
@@ -226,7 +290,7 @@ static int placefig0(struct Figure *figset, int fignum, int resize, struct Posit
 		currfig = figdup(&figset[fignum]);
 		rotate(&currfig, angle);
 		
-		mtx = approxfig(&currfig, resize);
+		mtx = approxfig(&currfig, bound, resize);
 		if (mtx.w > width / resize || mtx.h > height / resize) 
 			continue;
 		for (y = 0; y < height / resize - mtx.h; y++) {
@@ -272,13 +336,16 @@ static int placefig0(struct Figure *figset, int fignum, int resize, struct Posit
 }
 
 
-static int placefig1(struct Figure *figset, int fignum, int resize, struct Position *posits, int **place, int npos, int width, int height) 
+static int placefig1(struct Figure *figset, int fignum, int bound, int resize, struct Position *posits, int **place, int npos, int width, int height) 
 {
 	int placed = 0, angstep, first = 1;
 	double angle;
 	int x, y;
 	struct Figure currfig;
 	struct NestMatrix minmtx;
+
+	resize = abs(resize);
+	resize = (resize < 1)? 1 : resize;
 	
 	angstep = figset[fignum].angstep == 0 ? 360 : figset[fignum].angstep;
 	for (angle = 0; angle < 360; angle += angstep) {
@@ -286,7 +353,7 @@ static int placefig1(struct Figure *figset, int fignum, int resize, struct Posit
 		currfig = figdup(&figset[fignum]);
 		rotate(&currfig, angle);
 		
-		mtx = approxfig(&currfig, resize);
+		mtx = approxfig(&currfig, bound, resize);
 		if (mtx.w > width / resize || mtx.h > height / resize) 
 			continue;
 		for (y = 0; y < height / resize - mtx.h; y++) {
@@ -335,7 +402,7 @@ static int placefig1(struct Figure *figset, int fignum, int resize, struct Posit
 }
 
 
-void mtxnest(struct Figure *figset, int setsize, int resize, struct Individ *indiv, struct NestAttrs *attrs)
+void mtxnest(struct Figure *figset, int setsize, int bound, int resize, struct Individ *indiv, struct NestAttrs *attrs)
 {
 	int i, j, k, npos;
 	int *mask;
@@ -345,7 +412,7 @@ void mtxnest(struct Figure *figset, int setsize, int resize, struct Individ *ind
 	struct Position *posits;
 	FILE *logfile;
 	double mtx[3][3];
-	int (*placefig)(struct Figure *figset, int fignum, int resize, struct Position *posits, int **place, int npos, int width, int height); 
+	int (*placefig)(struct Figure *figset, int fignum, int bound, int resize, struct Position *posits, int **place, int npos, int width, int height); 
 	
 	logfile = attrs->logfile;
 	width = (int)attrs->width;
@@ -381,7 +448,7 @@ void mtxnest(struct Figure *figset, int setsize, int resize, struct Individ *ind
 		
 		fignum = indiv->genom[i];
 	
-		if (!placefig(figset, fignum, resize, posits, place, npos, width, height)) {
+		if (!placefig(figset, fignum, bound, resize, posits, place, npos, width, height)) {
 			fprintf(logfile, "fail to position %d\n", fignum);
 			continue;
 		}
@@ -414,7 +481,7 @@ void mtxnest(struct Figure *figset, int setsize, int resize, struct Individ *ind
 			continue;
 		}
 
-		if (!placefig(figset, i, resize, posits, place, npos, width, height)) {
+		if (!placefig(figset, i, bound, resize, posits, place, npos, width, height)) {
 			for (j = i; j < setsize; j++) {
 				if (figset[i].id == figset[j].id) {
 					mask[j] = -1;

@@ -23,7 +23,7 @@ struct NestAttrs attrs;
 struct Individ *indivs;
 struct Individ heirs[INDIVS_PER_ITER + 1];
 struct Figure *figset;
-int setsize, resize;
+int setsize, bound, resize;
 
 void trim(char *str)
 {
@@ -153,7 +153,7 @@ void *thrdfunc(void *d)
 	data = (struct ThreadData*)d;
 	
 	fprintf(stderr, "In thread heirnum=%d\n", data->heirnum);
-	mtxnest(figset, setsize, resize, &heirs[data->heirnum], &attrs);
+	mtxnest(figset, setsize, BOUND_DEF, resize, &heirs[data->heirnum], &attrs);
 	fflush(stderr);
 	free(data);
 	
@@ -251,7 +251,8 @@ int main(int argc, char **argv)
 	iters = atoi(argv[3]);
 	type = atoi(argv[4]);
 	check = atoi(argv[5]);
-	resize = atoi(argv[6]);
+	bound = atoi(argv[6]);
+	resize = atoi(argv[7]);
 	
 	if (type) 
 		attrs.type = MTXNEST_DEFAULT;
@@ -284,7 +285,7 @@ int main(int argc, char **argv)
 
 		fprintf(stderr, "start first nest\n");
 		fflush(stderr);
-		mtxnest(figset, setsize, resize, &indivs[0], &attrs);
+		mtxnest(figset, setsize, BOUND_DEF, resize, &indivs[0], &attrs);
 						
 		nindivs = 1;		
 		ext = 0;
