@@ -153,7 +153,7 @@ void *thrdfunc(void *d)
 	data = (struct ThreadData*)d;
 	
 	fprintf(stderr, "In thread heirnum=%d\n", data->heirnum);
-	mtxnest(figset, setsize, BOUND_DEF, resize, &heirs[data->heirnum], &attrs);
+	mtxnest(figset, setsize, bound, resize, &heirs[data->heirnum], &attrs);
 	fflush(stderr);
 	free(data);
 	
@@ -285,7 +285,7 @@ int main(int argc, char **argv)
 
 		fprintf(stderr, "start first nest\n");
 		fflush(stderr);
-		mtxnest(figset, setsize, BOUND_DEF, resize, &indivs[0], &attrs);
+		mtxnest(figset, setsize, bound, resize, &indivs[0], &attrs);
 						
 		nindivs = 1;		
 		ext = 0;

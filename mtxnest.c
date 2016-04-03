@@ -257,6 +257,8 @@ struct NestMatrix approxfig(struct Figure *fig, int bound, int resize)
 		if (resize > 1) {
 			tmp = resizemtx(&res2, resize);
 			destrmtx(&res2);
+			res2 = mtxdup(&tmp);
+			destrmtx(&tmp);
 		}
 		for (i = 0; i < 3; i++) {
 			for (j = 0; j < 3; j++) {
@@ -266,14 +268,16 @@ struct NestMatrix approxfig(struct Figure *fig, int bound, int resize)
 		mtx[0][2] = bound;
 		mtx[1][2] = bound;
 		mtxmult(mtx, fig);
-		return tmp;
+		return res2;
 	}	
 	
 	if (resize > 1) {
 		tmp = resizemtx(&res, resize);
 		destrmtx(&res);
+		res = mtxdup(&tmp);
+		destrmtx(&tmp);
 	}
-	return tmp;
+	return res;
 }
 
 static int placefig0(struct Figure *figset, int fignum, int bound, int resize, struct Position *posits, int **place, int npos, int width, int height) 
@@ -342,10 +346,7 @@ static int placefig1(struct Figure *figset, int fignum, int bound, int resize, s
 	double angle;
 	int x, y;
 	struct Figure currfig;
-	struct NestMatrix minmtx;
-
-	resize = abs(resize);
-	resize = (resize < 1)? 1 : resize;
+	struct NestMatrix minmtx;	
 	
 	angstep = figset[fignum].angstep == 0 ? 360 : figset[fignum].angstep;
 	for (angle = 0; angle < 360; angle += angstep) {
@@ -414,6 +415,8 @@ void mtxnest(struct Figure *figset, int setsize, int bound, int resize, struct I
 	double mtx[3][3];
 	int (*placefig)(struct Figure *figset, int fignum, int bound, int resize, struct Position *posits, int **place, int npos, int width, int height); 
 	
+	resize = abs(resize);
+	resize = (resize < 1)? 1 : resize;
 	logfile = attrs->logfile;
 	width = (int)attrs->width;
 	height = (int)attrs->height;
@@ -466,7 +469,7 @@ void mtxnest(struct Figure *figset, int setsize, int bound, int resize, struct I
 		npos++;
 		
 		tmpheight = (tmpheight > posits[npos - 1].fig.corner.y + posits[npos - 1].y)? tmpheight : posits[npos - 1].fig.corner.y + posits[npos - 1].y;
-//		fprintf(logfile, "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", fignum, npos, posits[npos - 1].angle, tmpheight, posits[npos - 1].x, posits[npos - 1].y);
+		fprintf(logfile, "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", fignum, npos, posits[npos - 1].angle, tmpheight, posits[npos - 1].x, posits[npos - 1].y);
 	}
 
 	if (npos < indiv->gensize) {
@@ -503,7 +506,7 @@ void mtxnest(struct Figure *figset, int setsize, int bound, int resize, struct I
 		npos++;
 		
 		tmpheight = (tmpheight > posits[npos - 1].fig.corner.y + posits[npos - 1].y)? tmpheight : posits[npos - 1].fig.corner.y + posits[npos - 1].y;
-//		fprintf(logfile, "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", i, npos, posits[npos - 1].angle, tmpheight, posits[npos - 1].x, posits[npos - 1].y);	
+		fprintf(logfile, "nested_id=%d positioned=%d angle=%lf height=%lf x=%lf y=%lf \n", i, npos, posits[npos - 1].angle, tmpheight, posits[npos - 1].x, posits[npos - 1].y);	
 		indiv->genom[npos - 1] = i;
 	}
 	
